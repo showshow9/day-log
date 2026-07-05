@@ -1,0 +1,1398 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Day Timeline</title>
+    <style>
+:root {
+  color-scheme: light;
+  --bg: #f7f7f4;
+  --surface: #ffffff;
+  --soft: #eef3ef;
+  --ink: #202523;
+  --muted: #66706b;
+  --line: #dce2dd;
+  --green: #2f7d5c;
+  --blue: #316f9f;
+  --rose: #b2545c;
+  --amber: #a76a24;
+  --violet: #6f6aa8;
+  --shadow: 0 14px 40px rgba(31, 42, 36, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.5;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px clamp(14px, 4vw, 36px);
+  background: rgba(247, 247, 244, 0.9);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(14px);
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: 24px;
+}
+
+h2 {
+  font-size: 18px;
+}
+
+.eyebrow {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.layout {
+  width: min(880px, 100%);
+  margin: 0 auto;
+  padding: 16px clamp(12px, 4vw, 28px) 42px;
+}
+
+.panel {
+  margin-bottom: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.template-grid,
+.activity-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.hint {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.template-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: end;
+}
+
+.template-grid > button {
+  flex: 0 0 auto;
+  padding: 0 18px;
+}
+
+.work-end {
+  display: grid;
+  gap: 4px;
+}
+
+.work-end span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.work-end input {
+  min-width: 120px;
+}
+
+.selected-pill {
+  align-self: start;
+  min-width: 88px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--activity-color, var(--green)) 14%, #fff);
+  color: var(--activity-color, var(--green));
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+button {
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--soft);
+  color: var(--ink);
+  font-weight: 750;
+  cursor: pointer;
+}
+
+button.active,
+button.primary,
+.ghost {
+  background: var(--green);
+  color: #fff;
+}
+
+button.active {
+  background: var(--activity-color, var(--green));
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.55);
+}
+
+button.danger {
+  color: var(--rose);
+}
+
+.ghost {
+  min-width: 136px;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--soft);
+  color: var(--ink);
+  padding: 0 10px;
+}
+
+.entry-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr minmax(0, 2fr) 88px;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+label span {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.fields {
+  display: grid;
+  gap: 14px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field.hidden {
+  display: none;
+}
+
+.field label {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.scale-hint {
+  margin-left: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.scale {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.scale-btn {
+  flex: 1 1 40px;
+  min-width: 40px;
+  min-height: 40px;
+}
+
+.scale-btn.active {
+  background: var(--green);
+  color: #fff;
+}
+
+.scale.reverse .scale-btn.active {
+  background: var(--rose);
+  color: #fff;
+}
+
+.scale.toggle .scale-btn.active {
+  background: var(--blue);
+  color: #fff;
+}
+
+.minutes-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.minutes-input span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.quick-wrap {
+  margin-top: 12px;
+}
+
+.quick-label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.quick-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.quick-grid button {
+  min-height: 34px;
+  font-size: 13px;
+}
+
+.timeline {
+  display: grid;
+  gap: 8px;
+}
+
+.timeline-item {
+  display: grid;
+  grid-template-columns: 112px 92px minmax(0, 1fr) 62px;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfa;
+}
+
+.time {
+  color: var(--blue);
+  font-weight: 800;
+}
+
+.kind {
+  width: fit-content;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--activity-color, var(--green)) 14%, #fff);
+  color: var(--activity-color, var(--green));
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.note {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.remove {
+  min-height: 32px;
+  color: var(--rose);
+  font-size: 12px;
+}
+
+.empty {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+textarea {
+  min-height: 180px;
+  padding: 12px;
+  resize: vertical;
+}
+
+.visual-panel {
+  overflow: hidden;
+}
+
+.total-pill {
+  min-width: 92px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: #f2f5f2;
+  color: var(--muted);
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.visual-grid {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.day-rail-wrap {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 8px;
+  min-height: 520px;
+}
+
+.day-rail-labels {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0 0 2px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+  text-align: right;
+}
+
+.day-rail {
+  position: relative;
+  min-height: 520px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background:
+    linear-gradient(to bottom, rgba(32, 37, 35, 0.06) 1px, transparent 1px) 0 0 / 100% calc(100% / 24),
+    #fbfcfa;
+}
+
+.rail-block {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  min-height: 9px;
+  overflow: hidden;
+  border-radius: 6px;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(31, 42, 36, 0.12);
+}
+
+.rail-block span {
+  padding: 0 7px;
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summary-side {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+}
+
+.donut {
+  width: 168px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #e7ece8;
+  box-shadow: inset 0 0 0 28px var(--surface), 0 0 0 1px var(--line);
+}
+
+.category-summary {
+  display: grid;
+  gap: 10px;
+}
+
+.summary-row {
+  display: grid;
+  gap: 6px;
+}
+
+.summary-meta {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.summary-meta strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summary-meta small {
+  color: var(--muted);
+  font-weight: 750;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.summary-track {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e7ece8;
+}
+
+.summary-track div {
+  height: 100%;
+  border-radius: inherit;
+}
+
+@media (max-width: 680px) {
+  .topbar,
+  .panel-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ghost {
+    width: 100%;
+  }
+
+  .template-grid,
+  .activity-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .quick-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .entry-form {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .entry-form .wide,
+  .entry-form button {
+    grid-column: 1 / -1;
+  }
+
+  .timeline-item {
+    grid-template-columns: 1fr auto;
+  }
+
+  .time {
+    grid-column: 1 / -1;
+  }
+
+  .visual-grid,
+  .summary-side {
+    grid-template-columns: 1fr;
+  }
+
+  .day-rail-wrap,
+  .day-rail {
+    min-height: 440px;
+  }
+
+  .donut {
+    justify-self: center;
+  }
+}
+
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Daily Log</p>
+        <h1>今日の記録</h1>
+      </div>
+      <button class="ghost" id="copyButton" type="button">Markdownコピー</button>
+    </header>
+
+    <main class="layout">
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">今日の記録</p>
+            <h2>日付</h2>
+          </div>
+          <input id="dateInput" type="date" aria-label="日付">
+        </div>
+        <p class="hint" id="weekdayHint"></p>
+      </section>
+
+      <section id="dailyForm"></section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">テンプレート</p>
+            <h2>今日の型（時系列・視覚用）</h2>
+          </div>
+        </div>
+        <div class="template-grid">
+          <button type="button" data-template="workday">平日仕事</button>
+          <label class="work-end"><span>始業</span><input type="time" id="workStartInput" value="08:30"></label>
+          <label class="work-end"><span>終業</span><input type="time" id="workEndInput" value="17:15"></label>
+          <button class="danger" id="clearButton" type="button">全削除</button>
+        </div>
+        <p class="hint" id="templateHint">「平日仕事」で 始業〜終業 の仕事ブロックが1つ入ります（残業・午後出社の日は時刻を変えて押す）。</p>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">追加</p>
+            <h2>活動ブロック</h2>
+          </div>
+          <div class="selected-pill" id="selectedActivity">アコギ</div>
+        </div>
+
+        <div class="activity-grid" id="activityGrid">
+          <button type="button" data-activity="仕事">仕事</button>
+          <button type="button" data-activity="休憩">休憩</button>
+          <button type="button" data-activity="食事">食事</button>
+          <button type="button" data-activity="生活">生活</button>
+          <button type="button" data-activity="家事">家事</button>
+          <button type="button" data-activity="睡眠">睡眠</button>
+          <button type="button" data-activity="移動">移動</button>
+          <button type="button" data-activity="作曲">作曲</button>
+          <button type="button" data-activity="アコギ" class="active">アコギ</button>
+          <button type="button" data-activity="エレキ">エレキ</button>
+          <button type="button" data-activity="ピアノ">ピアノ</button>
+          <button type="button" data-activity="歌">歌</button>
+          <button type="button" data-activity="診断士">診断士</button>
+          <button type="button" data-activity="筋トレ">筋トレ</button>
+          <button type="button" data-activity="YouTube">YouTube</button>
+          <button type="button" data-activity="ゲーム">ゲーム</button>
+          <button type="button" data-activity="AI">AI</button>
+          <button type="button" data-activity="だらだら">だらだら</button>
+          <button type="button" data-activity="その他">その他</button>
+        </div>
+
+        <form class="entry-form" id="entryForm">
+          <label>
+            <span>開始</span>
+            <select id="startSelect"></select>
+          </label>
+          <label>
+            <span>終了</span>
+            <select id="endSelect"></select>
+          </label>
+          <label class="wide">
+            <span>メモ</span>
+            <input id="noteInput" type="text" placeholder="その他なら具体名。例：兄弟とラーメン">
+          </label>
+          <button type="submit">追加</button>
+        </form>
+
+        <div class="quick-wrap">
+          <span class="quick-label">よく使う長さ（終了を自動セット）</span>
+          <div class="quick-grid" id="quickGrid">
+            <button type="button" data-quick="10">10分</button>
+            <button type="button" data-quick="20">20分</button>
+            <button type="button" data-quick="30">30分</button>
+            <button type="button" data-quick="40">40分</button>
+            <button type="button" data-quick="60">1時間</button>
+            <button type="button" data-quick="90">1.5時間</button>
+            <button type="button" data-quick="120">2時間</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel visual-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">見返し</p>
+            <h2>1日の配分</h2>
+          </div>
+          <div class="total-pill" id="totalTracked">0分</div>
+        </div>
+        <div class="visual-grid">
+          <div class="day-rail-wrap">
+            <div class="day-rail-labels" aria-hidden="true">
+              <span>0</span>
+              <span>6</span>
+              <span>12</span>
+              <span>18</span>
+              <span>24</span>
+            </div>
+            <div class="day-rail" id="dayRail" aria-label="24時間の縦棒表示"></div>
+          </div>
+          <div class="summary-side">
+            <div class="donut" id="categoryDonut" aria-label="カテゴリ別の円グラフ"></div>
+            <div class="category-summary" id="categorySummary"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">プレビュー</p>
+            <h2>今日の流れ</h2>
+          </div>
+        </div>
+        <div class="timeline" id="timelineList"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">貼り付け用</p>
+            <h2>Markdown</h2>
+          </div>
+        </div>
+        <textarea id="markdownOutput" readonly></textarea>
+      </section>
+    </main>
+
+    <script>
+const state = {
+  selectedTemplate: "",
+  selectedActivity: "アコギ",
+  lastDuration: 40,
+  entries: [],
+  log: {}
+};
+
+const storageKey = "dayTimeline.entries";
+const logKey = "dailyLog.fields";
+const dayMinutes = 24 * 60;
+const categoryMeta = {
+  仕事: { group: "仕事", color: "#316f9f" },
+  休憩: { group: "生活", color: "#77a6a1" },
+  食事: { group: "生活", color: "#a76a24" },
+  生活: { group: "生活", color: "#556f44" },
+  家事: { group: "生活", color: "#8b8250" },
+  睡眠: { group: "回復", color: "#6f6aa8" },
+  移動: { group: "生活", color: "#87908b" },
+  作曲: { group: "音楽", color: "#2f7d5c" },
+  アコギ: { group: "音楽", color: "#3d8b72" },
+  エレキ: { group: "音楽", color: "#7b5ea8" },
+  ピアノ: { group: "音楽", color: "#a76a24" },
+  歌: { group: "音楽", color: "#b2545c" },
+  診断士: { group: "学習", color: "#587b3f" },
+  筋トレ: { group: "身体", color: "#c16c3d" },
+  YouTube: { group: "消費", color: "#c55353" },
+  ゲーム: { group: "消費", color: "#8c6a4d" },
+  AI: { group: "創作", color: "#2f6f87" },
+  だらだら: { group: "余白", color: "#9a8f7c" },
+  その他: { group: "その他", color: "#66706b" }
+};
+
+const WORK_START = "08:30";
+const WORK_END_DEFAULT = "17:15";
+
+const scaleHints = {
+  normal: "1 最悪 → 5 最高",
+  reverse: "1 なし/整ってる → 5 強い/乱れてる",
+  work: "0 仕事なし ／ 1 → 5"
+};
+
+// 日次ログの入力項目（ショートカット出力の順に合わせる）
+const dailyGroups = [
+  {
+    title: "気分",
+    fields: [
+      { key: "mood", label: "今日の気分", type: "scale" },
+      { key: "moodReason", label: "気分の主な理由", type: "text", placeholder: "なぜその気分か" }
+    ]
+  },
+  {
+    title: "睡眠・朝",
+    fields: [
+      { key: "sleepTime", label: "就寝時間", type: "time" },
+      { key: "wakeTime", label: "起床時間", type: "time" },
+      { key: "sleepQuality", label: "睡眠の質", type: "scale" },
+      { key: "morningState", label: "朝の状態", type: "scale" }
+    ]
+  },
+  {
+    title: "心身",
+    fields: [
+      { key: "health", label: "体調", type: "scale" },
+      { key: "fatigue", label: "疲労感", type: "scale", reverse: true },
+      { key: "anxiety", label: "不安感", type: "scale", reverse: true },
+      { key: "focus", label: "集中度", type: "scale" }
+    ]
+  },
+  {
+    title: "活動時間（手入力・分）",
+    fields: [
+      { key: "作曲", label: "作曲", type: "minutes" },
+      { key: "アコギ", label: "アコギ", type: "minutes" },
+      { key: "エレキ", label: "エレキ", type: "minutes" },
+      { key: "ピアノ", label: "ピアノ", type: "minutes" },
+      { key: "歌ボーカル", label: "歌・ボーカル練習", type: "minutes" },
+      { key: "診断士", label: "中小企業診断士2次試験勉強", type: "minutes" },
+      { key: "筋トレ", label: "筋トレ", type: "minutes" }
+    ]
+  },
+  {
+    title: "仕事・生活",
+    fields: [
+      { key: "workLoad", label: "仕事の負荷", type: "scale0" },
+      { key: "workAchieve", label: "仕事の達成感", type: "scale0" },
+      { key: "lifeDisorder", label: "生活の乱れ", type: "scale", reverse: true },
+      { key: "extraExpense", label: "予定外支出", type: "toggle" },
+      { key: "expenseMemo", label: "支出メモ", type: "text", placeholder: "何に使ったか", dependsOn: "extraExpense" },
+      { key: "av", label: "AV", type: "toggle" },
+      { key: "masturbation", label: "自慰行為", type: "toggle" }
+    ]
+  },
+  {
+    title: "日記",
+    fields: [
+      { key: "diary", label: "今日起きたこと", type: "textarea" },
+      { key: "good", label: "良かったこと・できたこと", type: "textarea" },
+      { key: "worry", label: "不安・モヤモヤ・愚痴", type: "textarea" },
+      { key: "tomorrow", label: "明日どうしたいか", type: "textarea" }
+    ]
+  }
+];
+
+function pad(value) {
+  return String(value).padStart(2, "0");
+}
+
+function today() {
+  const date = new Date();
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function jpWeekday(dateStr) {
+  if (!dateStr) return "";
+  const date = new Date(`${dateStr}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return "";
+  return ["日", "月", "火", "水", "木", "金", "土"][date.getDay()];
+}
+
+function toMinutes(time) {
+  const [hours, minutes] = time.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+function toTime(minutes) {
+  const normalized = ((minutes % dayMinutes) + dayMinutes) % dayMinutes;
+  return `${pad(Math.floor(normalized / 60))}:${pad(normalized % 60)}`;
+}
+
+function durationLabel(minutes) {
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  if (hours && rest) return `${hours}時間${rest}分`;
+  if (hours) return `${hours}時間`;
+  return `${rest}分`;
+}
+
+function save() {
+  const date = document.querySelector("#dateInput").value;
+  const all = readStoredEntries();
+  all[date] = state.entries;
+  localStorage.setItem(storageKey, JSON.stringify(all));
+}
+
+function load() {
+  const date = document.querySelector("#dateInput").value;
+  const all = readStoredEntries();
+  state.entries = all[date] || [];
+}
+
+function readStoredEntries() {
+  try {
+    return JSON.parse(localStorage.getItem(storageKey) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function readStoredLog() {
+  try {
+    return JSON.parse(localStorage.getItem(logKey) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function saveLog() {
+  const date = document.querySelector("#dateInput").value;
+  const all = readStoredLog();
+  all[date] = state.log;
+  localStorage.setItem(logKey, JSON.stringify(all));
+}
+
+function loadLog() {
+  const date = document.querySelector("#dateInput").value;
+  const all = readStoredLog();
+  state.log = all[date] || {};
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+function entryDuration(entry) {
+  const start = toMinutes(entry.start);
+  const end = toMinutes(entry.end);
+  return Math.max(0, end >= start ? end - start : dayMinutes - start + end);
+}
+
+function activityColor(kind) {
+  return categoryMeta[kind]?.color || categoryMeta["その他"].color;
+}
+
+function categoryTotals() {
+  const totals = new Map();
+  for (const entry of state.entries) {
+    const minutes = entryDuration(entry);
+    if (!minutes) continue;
+    const key = categoryMeta[entry.kind]?.group || entry.kind || "その他";
+    const current = totals.get(key) || { label: key, minutes: 0, color: activityColor(entry.kind) };
+    current.minutes += minutes;
+    totals.set(key, current);
+  }
+  return [...totals.values()].sort((a, b) => b.minutes - a.minutes);
+}
+
+function railSegments(entry) {
+  const start = toMinutes(entry.start);
+  const end = toMinutes(entry.end);
+  if (end >= start) return [{ start, minutes: end - start }];
+  return [
+    { start, minutes: dayMinutes - start },
+    { start: 0, minutes: end }
+  ].filter((segment) => segment.minutes > 0);
+}
+
+function renderActivitySelection() {
+  document.querySelectorAll("[data-activity]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.activity === state.selectedActivity);
+    button.style.setProperty("--activity-color", activityColor(button.dataset.activity));
+  });
+  document.querySelector("#selectedActivity").textContent = state.selectedActivity;
+  document.querySelector("#selectedActivity").style.setProperty("--activity-color", activityColor(state.selectedActivity));
+}
+
+function renderTemplateSelection() {
+  document.querySelectorAll("[data-template]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.template === state.selectedTemplate);
+  });
+}
+
+function fillTimeSelects() {
+  const startSelect = document.querySelector("#startSelect");
+  const endSelect = document.querySelector("#endSelect");
+
+  const options = Array.from({ length: 24 * 6 }, (_, index) => {
+    const value = toTime(index * 10);
+    return `<option value="${value}">${value}</option>`;
+  }).join("");
+
+  startSelect.innerHTML = options;
+  endSelect.innerHTML = options;
+  startSelect.value = "18:30";
+  endSelect.value = toTime(toMinutes("18:30") + state.lastDuration);
+}
+
+function selectedDuration() {
+  const start = toMinutes(document.querySelector("#startSelect").value);
+  const end = toMinutes(document.querySelector("#endSelect").value);
+  return end >= start ? end - start : dayMinutes - start + end;
+}
+
+function syncEndToDuration(minutes) {
+  const start = document.querySelector("#startSelect").value;
+  document.querySelector("#endSelect").value = toTime(toMinutes(start) + minutes);
+}
+
+function sortedEntries() {
+  return state.entries
+    .map((entry, index) => ({ ...entry, index }))
+    .sort((a, b) => toMinutes(a.start) - toMinutes(b.start));
+}
+
+// ===== 日次ログのフォーム描画 =====
+
+function scaleButtons(min, current) {
+  let html = "";
+  for (let i = min; i <= 5; i += 1) {
+    const active = String(current) === String(i) ? " active" : "";
+    html += `<button type="button" class="scale-btn${active}" data-val="${i}">${i}</button>`;
+  }
+  return html;
+}
+
+function renderField(field) {
+  const cur = state.log[field.key];
+
+  if (field.type === "scale" || field.type === "scale0") {
+    const min = field.type === "scale0" ? 0 : 1;
+    const hint = field.reverse ? scaleHints.reverse : (field.type === "scale0" ? scaleHints.work : scaleHints.normal);
+    return `
+      <div class="field">
+        <label>${escapeHtml(field.label)} <span class="scale-hint">${hint}</span></label>
+        <div class="scale${field.reverse ? " reverse" : ""}" data-key="${field.key}">
+          ${scaleButtons(min, cur)}
+        </div>
+      </div>`;
+  }
+
+  if (field.type === "toggle") {
+    const on = state.log[field.key] ? 1 : 0;
+    return `
+      <div class="field">
+        <label>${escapeHtml(field.label)}</label>
+        <div class="scale toggle" data-key="${field.key}">
+          <button type="button" class="scale-btn${on === 0 ? " active" : ""}" data-val="0">なし</button>
+          <button type="button" class="scale-btn${on === 1 ? " active" : ""}" data-val="1">あり</button>
+        </div>
+      </div>`;
+  }
+
+  if (field.type === "time") {
+    return `
+      <div class="field">
+        <label>${escapeHtml(field.label)}</label>
+        <input type="time" data-key="${field.key}" value="${escapeHtml(cur || "")}">
+      </div>`;
+  }
+
+  if (field.type === "minutes") {
+    return `
+      <div class="field">
+        <label>${escapeHtml(field.label)}</label>
+        <div class="minutes-input">
+          <input type="number" min="0" inputmode="numeric" data-key="${field.key}" value="${escapeHtml(cur ?? "")}">
+          <span>分</span>
+        </div>
+      </div>`;
+  }
+
+  if (field.type === "text") {
+    const hidden = field.dependsOn && !state.log[field.dependsOn] ? " hidden" : "";
+    return `
+      <div class="field${hidden}" data-field="${field.key}">
+        <label>${escapeHtml(field.label)}</label>
+        <input type="text" data-key="${field.key}" value="${escapeHtml(cur || "")}" placeholder="${escapeHtml(field.placeholder || "")}">
+      </div>`;
+  }
+
+  if (field.type === "textarea") {
+    return `
+      <div class="field">
+        <label>${escapeHtml(field.label)}</label>
+        <textarea data-key="${field.key}" rows="4" placeholder="${escapeHtml(field.placeholder || "")}">${escapeHtml(cur || "")}</textarea>
+      </div>`;
+  }
+
+  return "";
+}
+
+function renderDailyForm() {
+  const date = document.querySelector("#dateInput").value;
+  const weekday = document.querySelector("#weekdayHint");
+  if (weekday) weekday.textContent = date ? `${date}（${jpWeekday(date)}）` : "";
+
+  document.querySelector("#dailyForm").innerHTML = dailyGroups
+    .map(
+      (group) => `
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">今日の記録</p>
+            <h2>${escapeHtml(group.title)}</h2>
+          </div>
+        </div>
+        <div class="fields">
+          ${group.fields.map(renderField).join("")}
+        </div>
+      </section>`
+    )
+    .join("");
+}
+
+// ===== Markdown出力 =====
+
+function logVal(key) {
+  const value = state.log[key];
+  return value === undefined || value === null ? "" : value;
+}
+
+function minutesVal(key) {
+  const value = state.log[key];
+  return value === undefined || value === null || value === "" ? 0 : value;
+}
+
+function buildDailyMarkdown() {
+  const date = document.querySelector("#dateInput").value;
+  const lines = [];
+
+  lines.push("# 今日の日次ログ", "", "## 基本情報", "");
+  lines.push(`- 日付：${date}`);
+  lines.push(`- 曜日：${jpWeekday(date)}`);
+  lines.push(`- 今日の気分：${logVal("mood")}`);
+  lines.push(`- 気分の主な理由：${logVal("moodReason")}`);
+
+  lines.push("", "## 睡眠・朝の状態", "");
+  lines.push(`- 就寝時間：${logVal("sleepTime")}`);
+  lines.push(`- 起床時間：${logVal("wakeTime")}`);
+  lines.push(`- 睡眠の質：${logVal("sleepQuality")}`);
+  lines.push(`- 朝の状態：${logVal("morningState")}`);
+
+  lines.push("", "## 心身の状態", "");
+  lines.push(`- 体調：${logVal("health")}`);
+  lines.push(`- 疲労感：${logVal("fatigue")}`);
+  lines.push(`- 不安感：${logVal("anxiety")}`);
+  lines.push(`- 集中度：${logVal("focus")}`);
+
+  lines.push("", "## 活動時間", "");
+  lines.push(`- 作曲：${minutesVal("作曲")}分`);
+  lines.push(`- アコギ：${minutesVal("アコギ")}分`);
+  lines.push(`- エレキ：${minutesVal("エレキ")}分`);
+  lines.push(`- ピアノ：${minutesVal("ピアノ")}分`);
+  lines.push(`- 歌・ボーカル練習：${minutesVal("歌ボーカル")}分`);
+  lines.push(`- 中小企業診断士2次試験勉強：${minutesVal("診断士")}分`);
+  lines.push(`- 筋トレ：${minutesVal("筋トレ")}分`);
+
+  lines.push("", "## 仕事・生活", "");
+  lines.push(`- 仕事の負荷：${logVal("workLoad")}`);
+  lines.push(`- 仕事の達成感：${logVal("workAchieve")}`);
+  lines.push(`- 生活の乱れ：${logVal("lifeDisorder")}`);
+  lines.push(`- 予定外支出：${state.log.extraExpense ? 1 : 0}`);
+  if (state.log.extraExpense && logVal("expenseMemo")) {
+    lines.push(`- 支出メモ：${logVal("expenseMemo")}`);
+  }
+  lines.push(`- AV：${state.log.av ? 1 : 0}`);
+  lines.push(`- 自慰行為：${state.log.masturbation ? 1 : 0}`);
+
+  const diaryBlocks = [
+    ["## 今日起きたこと", logVal("diary")],
+    ["## 良かったこと・できたこと", logVal("good")],
+    ["## 不安・モヤモヤ・愚痴", logVal("worry")],
+    ["## 明日どうしたいか", logVal("tomorrow")]
+  ];
+  for (const [head, text] of diaryBlocks) {
+    lines.push("", head);
+    if (text) lines.push(String(text));
+  }
+
+  return lines.join("\n");
+}
+
+function timelineMarkdown() {
+  const lines = ["## 今日の時系列", ""];
+  const entries = sortedEntries();
+  if (!entries.length) {
+    lines.push("- （記録なし）");
+  } else {
+    for (const entry of entries) {
+      const label = entry.note ? `${entry.kind}：${entry.note}` : entry.kind;
+      lines.push(`- ${entry.start}-${entry.end} ${label}`);
+    }
+  }
+  return lines.join("\n");
+}
+
+function markdown() {
+  return `${buildDailyMarkdown()}\n\n${timelineMarkdown()}`;
+}
+
+function updateOutput() {
+  document.querySelector("#markdownOutput").value = markdown();
+}
+
+function renderVisuals() {
+  const rail = document.querySelector("#dayRail");
+  const summary = document.querySelector("#categorySummary");
+  const donut = document.querySelector("#categoryDonut");
+  const total = state.entries.reduce((sum, entry) => sum + entryDuration(entry), 0);
+  const totals = categoryTotals();
+
+  document.querySelector("#totalTracked").textContent = total ? `${durationLabel(total)} 記録` : "0分";
+
+  rail.innerHTML = sortedEntries()
+    .flatMap((entry) =>
+      railSegments(entry).map((segment) => {
+        const top = (segment.start / dayMinutes) * 100;
+        const height = Math.max(0.7, (segment.minutes / dayMinutes) * 100);
+        const note = entry.note ? ` / ${entry.note}` : "";
+        return `
+          <div
+            class="rail-block"
+            style="top:${top}%; height:${height}%; background:${activityColor(entry.kind)}"
+            title="${escapeHtml(`${entry.start}-${entry.end} ${entry.kind}${note}`)}"
+          >
+            <span>${escapeHtml(entry.kind)}</span>
+          </div>
+        `;
+      }))
+    .join("");
+
+  if (!totals.length) {
+    summary.innerHTML = `<p class="empty">活動を追加すると配分が出ます。</p>`;
+    donut.style.background = "#e7ece8";
+    return;
+  }
+
+  let cursor = 0;
+  const gradientStops = totals.map((item) => {
+    const start = cursor;
+    const end = cursor + (item.minutes / total) * 100;
+    cursor = end;
+    return `${item.color} ${start}% ${end}%`;
+  });
+  donut.style.background = `conic-gradient(${gradientStops.join(", ")})`;
+
+  summary.innerHTML = totals
+    .map((item) => {
+      const percent = Math.round((item.minutes / total) * 100);
+      return `
+        <div class="summary-row">
+          <div class="summary-meta">
+            <span class="dot" style="background:${item.color}"></span>
+            <strong>${escapeHtml(item.label)}</strong>
+            <small>${durationLabel(item.minutes)} / ${percent}%</small>
+          </div>
+          <div class="summary-track">
+            <div style="width:${percent}%; background:${item.color}"></div>
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function renderTimeline() {
+  const list = document.querySelector("#timelineList");
+  const entries = sortedEntries();
+
+  if (!entries.length) {
+    list.innerHTML = `<p class="empty">まだ何も入っていません。</p>`;
+  } else {
+    list.innerHTML = entries
+      .map((entry) => {
+        const note = entry.note || "";
+        return `
+          <div class="timeline-item">
+            <div class="time">${escapeHtml(entry.start)}-${escapeHtml(entry.end)}</div>
+            <div class="kind" style="--activity-color:${activityColor(entry.kind)}">${escapeHtml(entry.kind)}</div>
+            <div class="note">${escapeHtml(note)}</div>
+            <button class="remove" type="button" data-remove="${entry.index}">削除</button>
+          </div>
+        `;
+      })
+      .join("");
+  }
+
+  renderVisuals();
+  updateOutput();
+}
+
+function addEntry(event) {
+  event.preventDefault();
+  const start = document.querySelector("#startSelect").value;
+  const end = document.querySelector("#endSelect").value;
+  const note = document.querySelector("#noteInput").value.trim();
+
+  if (start === end) {
+    document.querySelector("#endSelect").focus();
+    return;
+  }
+
+  if (state.selectedActivity === "その他" && !note) {
+    document.querySelector("#noteInput").focus();
+    return;
+  }
+
+  state.lastDuration = selectedDuration();
+  state.entries.push({
+    start,
+    end,
+    kind: state.selectedActivity,
+    note
+  });
+
+  document.querySelector("#noteInput").value = "";
+  document.querySelector("#startSelect").value = end;
+  syncEndToDuration(state.lastDuration);
+  save();
+  renderTimeline();
+}
+
+function applyTemplate(name) {
+  state.selectedTemplate = name;
+  renderTemplateSelection();
+  const hint = document.querySelector("#templateHint");
+
+  if (name === "workday") {
+    const start = document.querySelector("#workStartInput").value || WORK_START;
+    const end = document.querySelector("#workEndInput").value || WORK_END_DEFAULT;
+    state.entries = state.entries.filter((entry) => !entry.workTemplate);
+    state.entries.push({ start, end, kind: "仕事", note: "", workTemplate: true });
+    hint.textContent = `仕事 ${start}〜${end} を入れました。始業・終業を変えてもう一度押すと差し替わります。`;
+  }
+
+  save();
+  renderTimeline();
+}
+
+async function copyMarkdown() {
+  const output = document.querySelector("#markdownOutput").value;
+  try {
+    await navigator.clipboard.writeText(output);
+  } catch {
+    const textarea = document.querySelector("#markdownOutput");
+    textarea.focus();
+    textarea.select();
+    document.execCommand("copy");
+  }
+  const button = document.querySelector("#copyButton");
+  button.textContent = "コピー済み";
+  setTimeout(() => {
+    button.textContent = "Markdownコピー";
+  }, 1200);
+}
+
+function boot() {
+  document.querySelector("#dateInput").value = today();
+  fillTimeSelects();
+  load();
+  loadLog();
+  renderActivitySelection();
+  renderTemplateSelection();
+  renderDailyForm();
+  renderTimeline();
+
+  document.querySelector("#activityGrid").addEventListener("click", (event) => {
+    const activity = event.target.dataset.activity;
+    if (!activity) return;
+    state.selectedActivity = activity;
+    renderActivitySelection();
+    if (activity === "その他") document.querySelector("#noteInput").focus();
+  });
+
+  document.querySelector("#entryForm").addEventListener("submit", addEntry);
+  document.querySelector("#dateInput").addEventListener("change", () => {
+    load();
+    loadLog();
+    renderDailyForm();
+    renderTimeline();
+  });
+
+  document.querySelector("#startSelect").addEventListener("change", () => {
+    syncEndToDuration(state.lastDuration);
+  });
+
+  document.querySelector("#endSelect").addEventListener("change", () => {
+    const minutes = selectedDuration();
+    if (minutes) state.lastDuration = minutes;
+  });
+
+  document.querySelector("#quickGrid").addEventListener("click", (event) => {
+    const quick = event.target.dataset.quick;
+    if (!quick) return;
+    state.lastDuration = Number(quick);
+    syncEndToDuration(state.lastDuration);
+  });
+
+  document.querySelector(".template-grid").addEventListener("click", (event) => {
+    const template = event.target.dataset.template;
+    if (template) applyTemplate(template);
+  });
+
+  document.querySelector("#clearButton").addEventListener("click", (event) => {
+    event.stopPropagation();
+    if (state.entries.length && !confirm("今日の時系列を全部削除しますか？")) return;
+    state.entries = [];
+    save();
+    renderTimeline();
+  });
+
+  document.querySelector("#timelineList").addEventListener("click", (event) => {
+    const index = event.target.dataset.remove;
+    if (index === undefined) return;
+    state.entries.splice(Number(index), 1);
+    save();
+    renderTimeline();
+  });
+
+  // 日次ログ：スケール／トグルのボタン
+  const dailyForm = document.querySelector("#dailyForm");
+  dailyForm.addEventListener("click", (event) => {
+    const button = event.target.closest("button.scale-btn");
+    if (!button) return;
+    const group = button.parentElement;
+    const key = group.dataset.key;
+    const val = Number(button.dataset.val);
+    state.log[key] = val;
+    group.querySelectorAll("button.scale-btn").forEach((other) => {
+      other.classList.toggle("active", Number(other.dataset.val) === val);
+    });
+    if (key === "extraExpense") {
+      const memo = dailyForm.querySelector('[data-field="expenseMemo"]');
+      if (memo) memo.classList.toggle("hidden", !val);
+    }
+    saveLog();
+    updateOutput();
+  });
+
+  // 日次ログ：テキスト／数値／時刻の入力
+  dailyForm.addEventListener("input", (event) => {
+    const el = event.target;
+    if (!el.dataset || el.dataset.key === undefined || el.tagName === "BUTTON") return;
+    state.log[el.dataset.key] = el.value;
+    saveLog();
+    updateOutput();
+  });
+
+  document.querySelector("#copyButton").addEventListener("click", copyMarkdown);
+}
+
+boot();
+
+    </script>
+  </body>
+</html>
