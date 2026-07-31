@@ -45,10 +45,9 @@ textarea {
   font: inherit;
 }
 
+/* ヘッダーは固定しない。タブバーと同じ top:0 に貼り付いて重なるため（2026-07-31 修正）。
+   画面の狭いスマホで常時固定にすると、ヘッダー＋タブで24%を占めてしまう問題もある。 */
 .topbar {
-  position: sticky;
-  top: 0;
-  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1275,6 +1274,7 @@ textarea {
             <p class="eyebrow">貼り付け用</p>
             <h2>Markdown</h2>
           </div>
+          <button class="ghost" id="copyButtonBottom" type="button">Markdownコピー</button>
         </div>
         <textarea id="markdownOutput" readonly></textarea>
       </section>
@@ -2861,6 +2861,12 @@ function applyTemplate(name) {
   renderTimeline();
 }
 
+function copyButtons() {
+  return [document.querySelector("#copyButton"), document.querySelector("#copyButtonBottom")].filter(
+    Boolean
+  );
+}
+
 async function copyMarkdown() {
   const output = document.querySelector("#markdownOutput").value;
   try {
@@ -2871,10 +2877,13 @@ async function copyMarkdown() {
     textarea.select();
     document.execCommand("copy");
   }
-  const button = document.querySelector("#copyButton");
-  button.textContent = "コピー済み";
+  copyButtons().forEach((button) => {
+    button.textContent = "コピー済み";
+  });
   setTimeout(() => {
-    button.textContent = "Markdownコピー";
+    copyButtons().forEach((button) => {
+      button.textContent = "Markdownコピー";
+    });
   }, 1200);
 }
 
@@ -2966,7 +2975,7 @@ function boot() {
     updateOutput();
   });
 
-  document.querySelector("#copyButton").addEventListener("click", copyMarkdown);
+  copyButtons().forEach((button) => button.addEventListener("click", copyMarkdown));
 }
 
 // ===== タブ切り替え =====
