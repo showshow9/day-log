@@ -826,6 +826,54 @@ textarea {
   border-bottom: 0;
 }
 
+.kb-card-block {
+  padding: 4px 0 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.kb-card-block:last-child {
+  border-bottom: 0;
+}
+
+.kb-card-block .kb-mini {
+  border-bottom: 0;
+  padding-bottom: 4px;
+}
+
+.kb-card-settings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+}
+
+.kb-card-settings label {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.kb-card-settings input,
+.kb-card-settings select {
+  padding: 5px 7px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.kb-card-settings input {
+  width: 56px;
+  text-align: right;
+}
+
+.kb-card-settings input[data-card-opening] {
+  width: 84px;
+}
+
 .kb-balance-row {
   display: flex;
   gap: 8px;
@@ -1339,11 +1387,13 @@ const DEFAULT_CONFIG = {
     "美容・ヘア": 5600,
     仕事コーヒー: 1000
   },
+  // opening＝アプリを使い始める前に使った分（＝カードアプリに出ている「次回請求額」）。
+  // これを入れないと、記録していない過去のカード利用ぶん「使えるお金」が多く出てしまう。
   cards: {
-    Amazonカード: { closing: "monthEnd", payDay: 26 },
+    Amazonカード: { closing: "monthEnd", payDay: 26, opening: 0, openingSetAt: "" },
     // 15日締め翌月10日 と 月末締め翌月26日 の選択制。本人未確認なので後者で仮置き
-    三井住友: { closing: "monthEnd", payDay: 26, unconfirmed: true },
-    楽天カード: { closing: "monthEnd", payDay: 27 }
+    三井住友: { closing: "monthEnd", payDay: 26, opening: 0, openingSetAt: "", unconfirmed: true },
+    楽天カード: { closing: "monthEnd", payDay: 27, opening: 0, openingSetAt: "" }
   },
   balance: { amount: 0, updatedAt: "" },
   lastPay: "デビット"
@@ -1475,14 +1525,34 @@ function kbPayoutDate(item) {
   return `${payYm}-${pad(payDay)}`;
 }
 
+// 開始残（次回請求額）が引き落とされる日＝入れた日より後に来る最初の引落日
+function kbOpeningPayDate(card, setAt) {
+  const payDay = Number(card.payDay || 26);
+  const ym = kbMonthKey(setAt);
+  const day = Number(setAt.slice(8, 10));
+  const targetYm = day < payDay ? ym : kbAddMonths(ym, 1);
+  return `${targetYm}-${pad(Math.min(payDay, kbDaysInMonth(targetYm)))}`;
+}
+
 function kbCardOutstanding(dateStr) {
   const byCard = new Map();
+
+  // ① アプリを使い始める前の分（次回請求額）
+  for (const [name, card] of Object.entries(kb.config.cards)) {
+    const opening = Number(card.opening || 0);
+    if (!opening || !card.openingSetAt) continue;
+    if (kbOpeningPayDate(card, card.openingSetAt) <= dateStr) continue; // 引き落とし済み
+    byCard.set(name, (byCard.get(name) || 0) + opening);
+  }
+
+  // ② アプリに記録した分
   for (const item of kbAllExpenses()) {
     const method = PAY_METHODS.find((m) => m.key === item.pay);
     if (!method || method.type !== "credit") continue;
     if (kbPayoutDate(item) <= dateStr) continue; // 引き落とし済み
     byCard.set(item.pay, (byCard.get(item.pay) || 0) + Number(item.amount || 0));
   }
+
   return byCard;
 }
 
@@ -1707,13 +1777,41 @@ function kbRenderMonth() {
         .join("")
     : `<p class="empty">記録が増えるとここに出ます。</p>`;
 
-  // カード別の未引落
+  // カード別の未引落＋設定
   const cardRows = PAY_METHODS.filter((m) => m.type === "credit").map((m) => {
     const card = kb.config.cards[m.key] || {};
     const amount = outstanding.get(m.key) || 0;
-    return `<div class="kb-mini">
-        <span>${escapeHtml(m.label)}${card.unconfirmed ? '<em class="kb-flag warn">締め日 要確認</em>' : ""}</span>
-        <strong>${yen(amount)}</strong>
+    const opening = Number(card.opening || 0);
+    const openingLeft =
+      opening && card.openingSetAt && kbOpeningPayDate(card, card.openingSetAt) > asOf;
+    return `<div class="kb-card-block">
+        <div class="kb-mini">
+          <span>${escapeHtml(m.label)}${
+      card.unconfirmed ? '<em class="kb-flag warn">締め日 要確認</em>' : ""
+    }</span>
+          <strong>${yen(amount)}</strong>
+        </div>
+        <div class="kb-card-settings">
+          <label>締め
+            <select data-card-closing="${escapeHtml(m.key)}">
+              <option value="monthEnd"${card.closing === "monthEnd" ? " selected" : ""}>月末</option>
+              <option value="15"${String(card.closing) === "15" ? " selected" : ""}>15日</option>
+            </select>
+          </label>
+          <label>引落<input type="number" inputmode="numeric" min="1" max="31" data-card-payday="${escapeHtml(
+            m.key
+          )}" value="${Number(card.payDay || 26)}">日</label>
+          <label>次回請求 ¥<input type="number" inputmode="numeric" min="0" data-card-opening="${escapeHtml(
+            m.key
+          )}" value="${opening || ""}" placeholder="0"></label>
+        </div>
+        ${
+          openingLeft
+            ? `<p class="kb-note">開始残 ${yen(opening)} は ${escapeHtml(
+                kbOpeningPayDate(card, card.openingSetAt)
+              )} に引き落とされる想定で計算中</p>`
+            : ""
+        }
       </div>`;
   });
   document.querySelector("#kbCards2").innerHTML = cardRows.join("");
@@ -1897,6 +1995,29 @@ function kbBoot() {
           : `推定より ${yen(diff)} 多い＝収入か、記録した支出が実際より多いかもしれません。`;
     }
     kbRenderAll();
+  });
+
+  // カード設定（締め日・引落日・次回請求額）
+  document.querySelector("#kbCards2").addEventListener("change", (event) => {
+    const el = event.target;
+    const name =
+      el.dataset.cardClosing || el.dataset.cardPayday || el.dataset.cardOpening;
+    if (!name) return;
+    const card = kb.config.cards[name];
+    if (!card) return;
+
+    if (el.dataset.cardClosing) {
+      card.closing = el.value;
+      card.unconfirmed = false; // 自分で選び直したら「要確認」バッジを外す
+    } else if (el.dataset.cardPayday) {
+      card.payDay = Number(el.value) || 26;
+      card.unconfirmed = false;
+    } else {
+      card.opening = Number(el.value) || 0;
+      card.openingSetAt = card.opening ? kbToday() : "";
+    }
+    kbSaveConfig();
+    kbRenderMonth();
   });
 
   document.querySelector("#kbFixedList").addEventListener("input", (event) => {
