@@ -2,8 +2,13 @@
 <html lang="ja">
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>Day Timeline</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="日次ログ">
+    <meta name="theme-color" content="#f7f7f4">
+    <link rel="manifest" href="manifest.webmanifest">
     <style>
 :root {
   color-scheme: light;
@@ -536,18 +541,485 @@ textarea {
   }
 }
 
-    </style>
+</style>
+    <style>
+/* ===== タブ ===== */
+
+.tabbar {
+  display: flex;
+  gap: 6px;
+  padding: 0 clamp(14px, 4vw, 36px) 10px;
+  background: rgba(247, 247, 244, 0.9);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  backdrop-filter: blur(14px);
+}
+
+.tabbar button {
+  flex: 1;
+  padding: 10px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.tabbar button.active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+
+.tab-panel[hidden] {
+  display: none;
+}
+
+/* ===== 家計簿：入力 ===== */
+
+.kb-amount-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.kb-amount-row .yen {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+#kbAmount {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 28px;
+  font-weight: 800;
+  text-align: right;
+  background: var(--surface);
+}
+
+.kb-cat-grid,
+.kb-pay-grid {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.kb-cat-grid {
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+}
+
+.kb-pay-grid {
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+}
+
+.kb-cat-grid button,
+.kb-pay-grid button {
+  padding: 11px 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.kb-cat-grid button.active {
+  background: var(--activity-color, var(--green));
+  border-color: var(--activity-color, var(--green));
+  color: #fff;
+}
+
+.kb-pay-grid button.active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+
+.kb-flags {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+#kbUnplanned {
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+#kbUnplanned.on {
+  background: var(--rose);
+  border-color: var(--rose);
+  color: #fff;
+}
+
+#kbNote {
+  flex: 1;
+  min-width: 140px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.kb-submit {
+  width: 100%;
+  padding: 14px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--green);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+#kbHint {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* ===== 家計簿：表示 ===== */
+
+.kb-today-head {
+  font-size: 22px;
+}
+
+.kb-warn {
+  color: var(--rose);
+}
+
+.muted-text {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.kb-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+}
+
+.kb-row:last-child {
+  border-bottom: 0;
+}
+
+.kb-row .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.kb-row-cat {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.kb-row-note {
+  flex: 1;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kb-row-pay {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.kb-row-amount {
+  white-space: nowrap;
+}
+
+.kb-flag {
+  display: inline-block;
+  margin-left: 5px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--soft);
+  color: var(--muted);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+.kb-flag.warn {
+  background: #f6e4e6;
+  color: var(--rose);
+}
+
+.kb-cards {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.kb-card {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--soft);
+}
+
+.kb-card strong {
+  display: block;
+  margin: 2px 0 4px;
+  font-size: 24px;
+}
+
+.kb-card small {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.kb-track {
+  margin-top: 8px;
+  height: 6px;
+  border-radius: 999px;
+  background: #dfe6e0;
+  overflow: hidden;
+}
+
+.kb-track div {
+  height: 100%;
+  background: var(--green);
+}
+
+.kb-mini {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+
+.kb-mini:last-child {
+  border-bottom: 0;
+}
+
+.kb-balance-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+#kbBalanceInput {
+  flex: 1;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 700;
+  text-align: right;
+  background: var(--surface);
+}
+
+#kbBalanceSave {
+  padding: 11px 16px;
+  border: 1px solid var(--ink);
+  border-radius: 8px;
+  background: var(--ink);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#kbBalanceInfo,
+#kbBalanceDiff {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+#kbBalanceInfo strong {
+  color: var(--ink);
+  font-size: 16px;
+}
+
+#kbBalanceInfo small {
+  font-size: 11px;
+}
+
+/* ===== 先の見通し ===== */
+
+.kb-future-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.kb-future-row:last-child {
+  border-bottom: 0;
+}
+
+.kb-future-when strong {
+  display: block;
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+.kb-future-when small {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.kb-future-rest {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.kb-future-rest span {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.kb-future-rest strong {
+  font-size: 22px;
+}
+
+.kb-future-calc {
+  grid-column: 1 / -1;
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.kb-fixed-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+
+.kb-fixed-row > span {
+  flex: 1;
+  min-width: 0;
+}
+
+.kb-fixed-row.future > span {
+  color: var(--muted);
+}
+
+.kb-fixed-row label {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.kb-fixed-row input {
+  width: 74px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  text-align: right;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.kb-fixed-row input[data-fixed-day] {
+  width: 46px;
+}
+
+.kb-note {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* ===== 更新バナー ===== */
+
+.update-banner {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 13px;
+  box-shadow: var(--shadow);
+}
+
+.update-banner[hidden] {
+  display: none;
+}
+
+.update-banner button {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  font-weight: 800;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+</style>
   </head>
   <body>
     <header class="topbar">
       <div>
         <p class="eyebrow">Daily Log</p>
-        <h1>今日の記録</h1>
+        <h1 id="appTitle">今日の記録</h1>
       </div>
       <button class="ghost" id="copyButton" type="button">Markdownコピー</button>
     </header>
 
-    <main class="layout">
+    <nav class="tabbar" id="tabBar">
+      <button type="button" class="active" data-tab="log">記録</button>
+      <button type="button" data-tab="money">家計簿</button>
+      <button type="button" data-tab="future">先の見通し</button>
+    </nav>
+
+    <!-- ============ 記録タブ ============ -->
+    <main class="layout tab-panel" id="tab-log">
       <section class="panel">
         <div class="panel-heading">
           <div>
@@ -687,6 +1159,762 @@ textarea {
       </section>
     </main>
 
+    <!-- ============ 家計簿タブ ============ -->
+    <main class="layout tab-panel" id="tab-money" hidden>
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">その都度いれる</p>
+            <h2>支出を記録</h2>
+          </div>
+          <input id="kbDate" type="date" aria-label="支出の日付">
+        </div>
+
+        <form id="kbForm">
+          <div class="kb-amount-row">
+            <span class="yen">¥</span>
+            <input id="kbAmount" type="number" inputmode="numeric" min="0" step="1" placeholder="0" aria-label="金額">
+          </div>
+
+          <div class="kb-cat-grid" id="kbCatGrid"></div>
+
+          <div class="kb-pay-grid" id="kbPayGrid"></div>
+
+          <div class="kb-flags">
+            <button type="button" id="kbUnplanned">予定外だった</button>
+            <input id="kbNote" type="text" placeholder="メモ（任意）例：疲れて惣菜">
+          </div>
+
+          <button class="kb-submit" type="submit">記録する</button>
+          <p id="kbHint">金額 → カテゴリ → 記録する の3タップ。支払いはデビットのままでOK。</p>
+        </form>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">この日</p>
+            <h2>今日の支出</h2>
+          </div>
+          <div class="kb-today-head" id="kbTodayHead"></div>
+        </div>
+        <div id="kbTodayList"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">今月</p>
+            <h2>お金の状況</h2>
+          </div>
+        </div>
+        <div class="kb-cards" id="kbCards"></div>
+        <div class="panel-heading" style="margin-top:14px">
+          <div><p class="eyebrow">未引落のカード</p></div>
+        </div>
+        <div id="kbCards2"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">実測 vs 仮上限</p>
+            <h2>カテゴリ別</h2>
+          </div>
+        </div>
+        <div class="category-summary" id="kbCatBreakdown"></div>
+        <p class="kb-note">仮上限は自分で立てた計画値なので、当たっていない前提。実測平均が出たらそちらを見る。</p>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">気づいた時に更新</p>
+            <h2>銀行残高</h2>
+          </div>
+        </div>
+        <div class="kb-balance-row">
+          <input id="kbBalanceInput" type="number" inputmode="numeric" placeholder="実際の残高" aria-label="実際の銀行残高">
+          <button id="kbBalanceSave" type="button">更新</button>
+        </div>
+        <p id="kbBalanceInfo"></p>
+        <p id="kbBalanceDiff"></p>
+      </section>
+    </main>
+
+    <!-- ============ 先の見通しタブ ============ -->
+    <main class="layout tab-panel" id="tab-future" hidden>
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">このアプリを作った理由</p>
+            <h2>1年後にどうなるか</h2>
+          </div>
+        </div>
+        <div id="kbFutureTable"></div>
+        <p class="kb-note" id="kbFutureNote"></p>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">自動計上</p>
+            <h2>固定費</h2>
+          </div>
+        </div>
+        <div id="kbFixedList"></div>
+        <p class="kb-note">引落日は全部27日で仮置き。実際の日に直すと「使えるお金」が正確になります。金額も実額に直せます。</p>
+      </section>
+    </main>
+
+    <div class="update-banner" id="updateBanner" hidden>
+      <span>新しい版があります</span>
+      <button type="button" id="updateReload">更新</button>
+    </div>
+
+    <script>
+/* ===========================================================
+   家計簿（Kakeibo）
+   目的は記録ではなく2つ：
+     ① 1年後（奨学金10月・住民税2027年6月）に詰まないための実測づくり
+     ② 支出を自己分析のデータにする（崩れた日に何を買うか）
+   固定費は自動計上。手入力するのは「変動費」だけ。
+   =========================================================== */
+
+const EXPENSE_KEY = "kakeibo.expenses";
+const CONFIG_KEY = "kakeibo.config";
+
+const CATEGORIES = [
+  { key: "食料品", color: "#587b3f" },
+  { key: "外食", color: "#a76a24" },
+  { key: "カフェ", color: "#8b6b4a" },
+  { key: "お菓子・ジュース", color: "#c55353" },
+  { key: "日用品", color: "#77a6a1" },
+  { key: "仕事コーヒー", color: "#316f9f" },
+  { key: "美容・ヘア", color: "#b2545c" },
+  { key: "服", color: "#6f6aa8" },
+  { key: "音楽", color: "#2f7d5c" },
+  { key: "交通・帰省", color: "#87908b" },
+  { key: "交際・飲み会", color: "#c16c3d" },
+  { key: "医療", color: "#7b5ea8" },
+  { key: "娯楽", color: "#8c6a4d" },
+  { key: "その他", color: "#66706b" }
+];
+
+// 即時型＝記録した瞬間に残高が減る／後払い型＝締め日→引落日で減る
+const PAY_METHODS = [
+  { key: "デビット", type: "instant", label: "デビット" },
+  { key: "現金", type: "instant", label: "現金" },
+  { key: "Amazonカード", type: "credit", label: "Amazon" },
+  { key: "三井住友", type: "credit", label: "三井住友" },
+  { key: "楽天カード", type: "credit", label: "楽天" }
+];
+
+const DEFAULT_CONFIG = {
+  takeHome: 198727,
+  // 住民税：2026年入社で前年所得ゼロのため今は未課税。2027年6月から乗る（概算）
+  residentTax: { from: "2027-06", amount: 10000 },
+  fixed: [
+    { name: "家賃", amount: 53200, day: 27 },
+    { name: "NISA積立", amount: 20000, day: 27 },
+    { name: "奨学金", amount: 17000, day: 27, from: "2026-10" },
+    { name: "ハーモニーホール福井", amount: 16000, day: 27 },
+    { name: "ガス", amount: 4000, day: 27 },
+    { name: "iPhone16", amount: 3500, day: 27 },
+    { name: "電気", amount: 3500, day: 27 },
+    { name: "楽天", amount: 3200, day: 27 },
+    { name: "ChatGPT", amount: 3000, day: 27 },
+    { name: "Claude", amount: 3000, day: 27 },
+    { name: "ヘアカット", amount: 3000, day: 27 },
+    { name: "ジム", amount: 2600, day: 27 },
+    { name: "水道", amount: 2500, day: 27 },
+    { name: "Apple Music", amount: 1180, day: 27 },
+    { name: "Amazon", amount: 600, day: 27 },
+    { name: "iCloud", amount: 180, day: 27 }
+  ],
+  // 仮上限。翔大が作った計画値なので正しくない前提。実測平均を横に併記して1ヶ月後に直す
+  budgets: {
+    食料品: 35000,
+    日用品: 10000,
+    "美容・ヘア": 5600,
+    仕事コーヒー: 1000
+  },
+  cards: {
+    Amazonカード: { closing: "monthEnd", payDay: 26 },
+    // 15日締め翌月10日 と 月末締め翌月26日 の選択制。本人未確認なので後者で仮置き
+    三井住友: { closing: "monthEnd", payDay: 26, unconfirmed: true },
+    楽天カード: { closing: "monthEnd", payDay: 27 }
+  },
+  balance: { amount: 0, updatedAt: "" },
+  lastPay: "デビット"
+};
+
+const kb = {
+  expenses: {},
+  config: {},
+  draft: { amount: "", cat: "", pay: "デビット", unplanned: false, note: "" },
+  date: ""
+};
+
+/* ---------- 保存・読み込み ---------- */
+
+function kbReadJson(key, fallback) {
+  try {
+    return JSON.parse(localStorage.getItem(key) || "null") ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function kbLoad() {
+  kb.expenses = kbReadJson(EXPENSE_KEY, {});
+  const stored = kbReadJson(CONFIG_KEY, {});
+  kb.config = {
+    ...DEFAULT_CONFIG,
+    ...stored,
+    fixed: stored.fixed || DEFAULT_CONFIG.fixed,
+    budgets: { ...DEFAULT_CONFIG.budgets, ...(stored.budgets || {}) },
+    cards: { ...DEFAULT_CONFIG.cards, ...(stored.cards || {}) },
+    balance: { ...DEFAULT_CONFIG.balance, ...(stored.balance || {}) },
+    residentTax: { ...DEFAULT_CONFIG.residentTax, ...(stored.residentTax || {}) }
+  };
+  kb.draft.pay = kb.config.lastPay || "デビット";
+}
+
+function kbSaveExpenses() {
+  localStorage.setItem(EXPENSE_KEY, JSON.stringify(kb.expenses));
+}
+
+function kbSaveConfig() {
+  localStorage.setItem(CONFIG_KEY, JSON.stringify(kb.config));
+}
+
+/* ---------- 日付ユーティリティ ---------- */
+
+function kbToday() {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function kbMonthKey(dateStr) {
+  return String(dateStr).slice(0, 7);
+}
+
+function kbDaysInMonth(ym) {
+  const [y, m] = ym.split("-").map(Number);
+  return new Date(y, m, 0).getDate();
+}
+
+function kbAddMonths(ym, n) {
+  const [y, m] = ym.split("-").map(Number);
+  const total = y * 12 + (m - 1) + n;
+  return `${Math.floor(total / 12)}-${pad((total % 12) + 1)}`;
+}
+
+function yen(value) {
+  const n = Math.round(Number(value) || 0);
+  return `${n < 0 ? "−" : ""}¥${Math.abs(n).toLocaleString("ja-JP")}`;
+}
+
+/* ---------- 支出の取り出し ---------- */
+
+function kbAllExpenses() {
+  return Object.entries(kb.expenses).flatMap(([date, list]) =>
+    (list || []).map((item) => ({ ...item, date }))
+  );
+}
+
+function kbExpensesOn(date) {
+  return kb.expenses[date] || [];
+}
+
+function kbExpensesInMonth(ym) {
+  return kbAllExpenses().filter((item) => kbMonthKey(item.date) === ym);
+}
+
+/* ---------- 固定費・手取り（月ごとに変わる） ---------- */
+
+function kbFixedFor(ym) {
+  return kb.config.fixed.filter((item) => !item.from || ym >= item.from);
+}
+
+function kbFixedTotal(ym) {
+  return kbFixedFor(ym).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+}
+
+function kbTakeHome(ym) {
+  const tax = kb.config.residentTax;
+  const base = Number(kb.config.takeHome || 0);
+  return ym >= tax.from ? base - Number(tax.amount || 0) : base;
+}
+
+// 今月これから出ていく固定費（引落日が今日以降のもの）
+function kbRemainingFixed(dateStr) {
+  const ym = kbMonthKey(dateStr);
+  const day = Number(dateStr.slice(8, 10));
+  return kbFixedFor(ym)
+    .filter((item) => Number(item.day || 27) >= day)
+    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+}
+
+/* ---------- カードの未引落（＝タイムラグの本体） ---------- */
+
+// 支出1件が実際に口座から引き落とされる日
+function kbPayoutDate(item) {
+  const method = PAY_METHODS.find((m) => m.key === item.pay);
+  if (!method || method.type === "instant") return item.date;
+
+  const card = kb.config.cards[item.pay] || { closing: "monthEnd", payDay: 26 };
+  const ym = kbMonthKey(item.date);
+  const day = Number(item.date.slice(8, 10));
+
+  // 締め日を過ぎていたら1ヶ月ずれる
+  const shift = card.closing === "monthEnd" ? 1 : day <= Number(card.closing) ? 1 : 2;
+  const payYm = kbAddMonths(ym, shift);
+  const payDay = Math.min(Number(card.payDay || 26), kbDaysInMonth(payYm));
+  return `${payYm}-${pad(payDay)}`;
+}
+
+function kbCardOutstanding(dateStr) {
+  const byCard = new Map();
+  for (const item of kbAllExpenses()) {
+    const method = PAY_METHODS.find((m) => m.key === item.pay);
+    if (!method || method.type !== "credit") continue;
+    if (kbPayoutDate(item) <= dateStr) continue; // 引き落とし済み
+    byCard.set(item.pay, (byCard.get(item.pay) || 0) + Number(item.amount || 0));
+  }
+  return byCard;
+}
+
+/* ---------- 残高の推定 ---------- */
+
+// 最後に手入力した残高から、即時型の支出を引いた推定値
+function kbEstimatedBalance() {
+  const { amount, updatedAt } = kb.config.balance;
+  if (!updatedAt) return null;
+  const spent = kbAllExpenses()
+    .filter((item) => {
+      const method = PAY_METHODS.find((m) => m.key === item.pay);
+      return method && method.type === "instant" && item.date > updatedAt;
+    })
+    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  return Number(amount || 0) - spent;
+}
+
+/* ---------- 集計 ---------- */
+
+function kbCategoryTotals(ym) {
+  const totals = new Map();
+  for (const item of kbExpensesInMonth(ym)) {
+    totals.set(item.cat, (totals.get(item.cat) || 0) + Number(item.amount || 0));
+  }
+  return totals;
+}
+
+// 実測平均（データのある月だけで平均。当月は日割りで伸ばさず、そのまま除外）
+function kbCategoryAverage(currentYm) {
+  const months = new Map();
+  for (const item of kbAllExpenses()) {
+    const ym = kbMonthKey(item.date);
+    if (ym === currentYm) continue;
+    if (!months.has(ym)) months.set(ym, new Map());
+    const bucket = months.get(ym);
+    bucket.set(item.cat, (bucket.get(item.cat) || 0) + Number(item.amount || 0));
+  }
+  if (!months.size) return { count: 0, byCat: new Map(), total: 0 };
+
+  const byCat = new Map();
+  let total = 0;
+  for (const bucket of months.values()) {
+    for (const [cat, amount] of bucket) {
+      byCat.set(cat, (byCat.get(cat) || 0) + amount);
+      total += amount;
+    }
+  }
+  for (const [cat, amount] of byCat) byCat.set(cat, Math.round(amount / months.size));
+  return { count: months.size, byCat, total: Math.round(total / months.size) };
+}
+
+function kbBudgetTotal() {
+  return Object.values(kb.config.budgets).reduce((sum, v) => sum + Number(v || 0), 0);
+}
+
+// 1日あたりの変動費（今月の実績ベース。データが薄い日は仮上限から日割り）
+function kbDailyPace(dateStr) {
+  const ym = kbMonthKey(dateStr);
+  const day = Number(dateStr.slice(8, 10));
+  const spent = kbExpensesInMonth(ym).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  if (day >= 5 && spent > 0) return spent / day;
+  return kbBudgetTotal() / kbDaysInMonth(ym);
+}
+
+/* ---------- 日次ログ連携（timeline.js から呼ばれる） ---------- */
+
+function kbSummaryFor(date) {
+  const list = kbExpensesOn(date);
+  const total = list.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const unplanned = list
+    .filter((item) => item.unplanned)
+    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const byCat = new Map();
+  for (const item of list) byCat.set(item.cat, (byCat.get(item.cat) || 0) + Number(item.amount || 0));
+  const top = [...byCat.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([cat, amount]) => ({ cat, amount }));
+  return { count: list.length, total, unplanned, top };
+}
+
+/* ---------- 描画 ---------- */
+
+function kbCatColor(cat) {
+  return CATEGORIES.find((c) => c.key === cat)?.color || "#66706b";
+}
+
+function kbRenderInput() {
+  const grid = document.querySelector("#kbCatGrid");
+  grid.innerHTML = CATEGORIES.map(
+    (c) =>
+      `<button type="button" data-cat="${escapeHtml(c.key)}" style="--activity-color:${c.color}"${
+        kb.draft.cat === c.key ? ' class="active"' : ""
+      }>${escapeHtml(c.key)}</button>`
+  ).join("");
+
+  const pays = document.querySelector("#kbPayGrid");
+  pays.innerHTML = PAY_METHODS.map(
+    (m) =>
+      `<button type="button" data-pay="${escapeHtml(m.key)}"${
+        kb.draft.pay === m.key ? ' class="active"' : ""
+      }>${escapeHtml(m.label)}</button>`
+  ).join("");
+
+  document.querySelector("#kbUnplanned").classList.toggle("on", kb.draft.unplanned);
+  document.querySelector("#kbDate").value = kb.date;
+}
+
+function kbRenderToday() {
+  const summary = kbSummaryFor(kb.date);
+  const head = document.querySelector("#kbTodayHead");
+  head.innerHTML = summary.count
+    ? `<strong>${yen(summary.total)}</strong>${
+        summary.unplanned ? ` <span class="kb-warn">うち予定外 ${yen(summary.unplanned)}</span>` : ""
+      }`
+    : `<span class="muted-text">まだ記録なし</span>`;
+
+  const list = document.querySelector("#kbTodayList");
+  const items = kbExpensesOn(kb.date);
+  list.innerHTML = items.length
+    ? items
+        .map(
+          (item, index) => `
+        <div class="kb-row">
+          <span class="dot" style="background:${kbCatColor(item.cat)}"></span>
+          <span class="kb-row-cat">${escapeHtml(item.cat)}${
+            item.unplanned ? '<em class="kb-flag">予定外</em>' : ""
+          }</span>
+          <span class="kb-row-note">${escapeHtml(item.note || "")}</span>
+          <span class="kb-row-pay">${escapeHtml(item.pay)}</span>
+          <strong class="kb-row-amount">${yen(item.amount)}</strong>
+          <button class="remove" type="button" data-kb-remove="${index}">削除</button>
+        </div>`
+        )
+        .join("")
+    : `<p class="empty">この日の支出はまだありません。</p>`;
+}
+
+function kbRenderMonth() {
+  const ym = kbMonthKey(kb.date);
+  const today = kbToday();
+  const asOf = kbMonthKey(today) === ym ? today : `${ym}-${pad(kbDaysInMonth(ym))}`;
+
+  const outstanding = kbCardOutstanding(asOf);
+  const outstandingTotal = [...outstanding.values()].reduce((a, b) => a + b, 0);
+  const estimated = kbEstimatedBalance();
+  const remainingFixed = kbRemainingFixed(asOf);
+  const usable = estimated === null ? null : estimated - outstandingTotal - remainingFixed;
+
+  const spent = kbExpensesInMonth(ym).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const budget = kbBudgetTotal();
+  const avg = kbCategoryAverage(ym);
+
+  const daysLeft = Math.max(0, kbDaysInMonth(ym) - Number(asOf.slice(8, 10)));
+  const forecast = usable === null ? null : usable - daysLeft * kbDailyPace(asOf);
+
+  document.querySelector("#kbCards").innerHTML = `
+    <div class="kb-card">
+      <p class="eyebrow">使えるお金</p>
+      <strong class="${usable !== null && usable < 0 ? "kb-warn" : ""}">${
+    usable === null ? "残高を入れる" : yen(usable)
+  }</strong>
+      <small>銀行残高 − 未引落カード ${yen(outstandingTotal)} − 今月これからの固定費 ${yen(
+    remainingFixed
+  )}</small>
+    </div>
+    <div class="kb-card">
+      <p class="eyebrow">今月の変動費</p>
+      <strong>${yen(spent)}</strong>
+      <small>仮上限 ${yen(budget)}${
+    avg.count ? ` ／ 実測平均 ${yen(avg.total)}（${avg.count}ヶ月）` : "（実測はまだ無し）"
+  }</small>
+      <div class="kb-track"><div style="width:${Math.min(
+        100,
+        budget ? (spent / budget) * 100 : 0
+      )}%"></div></div>
+    </div>
+    <div class="kb-card">
+      <p class="eyebrow">月末見込み残り</p>
+      <strong class="${forecast !== null && forecast < 0 ? "kb-warn" : ""}">${
+    forecast === null ? "—" : yen(forecast)
+  }</strong>
+      <small>${
+        forecast === null
+          ? "銀行残高を入れると出ます"
+          : `残り${daysLeft}日 × 1日あたり ${yen(kbDailyPace(asOf))} で計算`
+      }</small>
+    </div>`;
+
+  // カテゴリ別
+  const totals = kbCategoryTotals(ym);
+  const rows = CATEGORIES.map((c) => ({
+    cat: c.key,
+    color: c.color,
+    spent: totals.get(c.key) || 0,
+    budget: Number(kb.config.budgets[c.key] || 0),
+    avg: avg.byCat.get(c.key) || 0
+  }))
+    .filter((row) => row.spent || row.budget)
+    .sort((a, b) => b.spent - a.spent);
+
+  document.querySelector("#kbCatBreakdown").innerHTML = rows.length
+    ? rows
+        .map((row) => {
+          const base = row.budget || row.spent || 1;
+          const percent = Math.min(100, (row.spent / base) * 100);
+          const over = row.budget && row.spent > row.budget;
+          return `
+        <div class="summary-row">
+          <div class="summary-meta">
+            <span class="dot" style="background:${row.color}"></span>
+            <strong>${escapeHtml(row.cat)}</strong>
+            <small>${yen(row.spent)}${row.budget ? ` / 仮${yen(row.budget)}` : ""}${
+            row.avg ? ` ・実測平均${yen(row.avg)}` : ""
+          }</small>
+          </div>
+          <div class="summary-track">
+            <div style="width:${percent}%; background:${over ? "#b2545c" : row.color}"></div>
+          </div>
+        </div>`;
+        })
+        .join("")
+    : `<p class="empty">記録が増えるとここに出ます。</p>`;
+
+  // カード別の未引落
+  const cardRows = PAY_METHODS.filter((m) => m.type === "credit").map((m) => {
+    const card = kb.config.cards[m.key] || {};
+    const amount = outstanding.get(m.key) || 0;
+    return `<div class="kb-mini">
+        <span>${escapeHtml(m.label)}${card.unconfirmed ? '<em class="kb-flag warn">締め日 要確認</em>' : ""}</span>
+        <strong>${yen(amount)}</strong>
+      </div>`;
+  });
+  document.querySelector("#kbCards2").innerHTML = cardRows.join("");
+}
+
+function kbRenderBalance() {
+  const estimated = kbEstimatedBalance();
+  const info = document.querySelector("#kbBalanceInfo");
+  const { updatedAt } = kb.config.balance;
+  info.innerHTML = estimated === null
+    ? `<span class="muted-text">まだ残高が入っていません。アプリを開いて銀行残高を1回入れると「使えるお金」が出ます。</span>`
+    : `推定残高 <strong>${yen(estimated)}</strong><small>（${escapeHtml(
+        updatedAt
+      )}に入れた実残高から、その後の即時払いを引いた値）</small>`;
+}
+
+function kbRenderFuture() {
+  const now = kbMonthKey(kbToday());
+  const stages = [
+    { label: "今", ym: now, note: "" },
+    { label: "2026年10月〜", ym: "2026-10", note: "奨学金 17,000 が始まる" },
+    { label: "2027年6月〜", ym: "2027-06", note: "住民税 約10,000 が乗る（概算）" }
+  ];
+
+  const avg = kbCategoryAverage(now);
+  const variableLabel = avg.count ? "変動費（実測平均）" : "変動費（仮上限）";
+  const variable = avg.count ? avg.total : kbBudgetTotal();
+
+  document.querySelector("#kbFutureTable").innerHTML = stages
+    .map((stage) => {
+      const takeHome = kbTakeHome(stage.ym);
+      const fixed = kbFixedTotal(stage.ym);
+      const rest = takeHome - fixed - variable;
+      return `
+      <div class="kb-future-row">
+        <div class="kb-future-when">
+          <strong>${stage.label}</strong>
+          ${stage.note ? `<small>${escapeHtml(stage.note)}</small>` : ""}
+        </div>
+        <div class="kb-future-rest ${rest < 15000 ? "kb-warn" : ""}">
+          <span>残り</span>
+          <strong>${yen(rest)}</strong>
+        </div>
+        <p class="kb-future-calc">
+          手取り ${yen(takeHome)} − 固定費 ${yen(fixed)} − ${escapeHtml(variableLabel)} ${yen(variable)}
+        </p>
+      </div>`;
+    })
+    .join("");
+
+  // 実測が1ヶ月分溜まったら、仮上限から実測平均へ自動で切り替わる
+  document.querySelector("#kbFutureNote").textContent = avg.count
+    ? `実測 ${avg.count}ヶ月分の平均で計算しています。月が増えるほど精度が上がります。`
+    : `変動費はまだ仮上限（自分で立てた計画値）で計算しています。1ヶ月分の実測が溜まると自動で実測平均に切り替わり、この表が本物になります。`;
+
+  // 固定費の内訳
+  document.querySelector("#kbFixedList").innerHTML = kb.config.fixed
+    .map(
+      (item, index) => `
+      <div class="kb-fixed-row${item.from && item.from > now ? " future" : ""}">
+        <span>${escapeHtml(item.name)}${
+        item.from ? `<em class="kb-flag">${escapeHtml(item.from)}〜</em>` : ""
+      }</span>
+        <label>¥<input type="number" inputmode="numeric" data-fixed-amount="${index}" value="${Number(
+        item.amount
+      )}"></label>
+        <label>引落<input type="number" inputmode="numeric" min="1" max="31" data-fixed-day="${index}" value="${Number(
+        item.day || 27
+      )}">日</label>
+      </div>`
+    )
+    .join("");
+}
+
+function kbRenderAll() {
+  kbRenderInput();
+  kbRenderToday();
+  kbRenderMonth();
+  kbRenderBalance();
+  kbRenderFuture();
+  if (typeof updateOutput === "function") updateOutput();
+}
+
+/* ---------- 操作 ---------- */
+
+function kbAddExpense() {
+  const amount = Number(document.querySelector("#kbAmount").value);
+  if (!amount || amount <= 0) {
+    document.querySelector("#kbAmount").focus();
+    return;
+  }
+  if (!kb.draft.cat) {
+    document.querySelector("#kbHint").textContent = "カテゴリを選んでください。";
+    return;
+  }
+
+  const list = kb.expenses[kb.date] || [];
+  list.push({
+    amount,
+    cat: kb.draft.cat,
+    pay: kb.draft.pay,
+    unplanned: kb.draft.unplanned,
+    note: document.querySelector("#kbNote").value.trim()
+  });
+  kb.expenses[kb.date] = list;
+  kbSaveExpenses();
+
+  kb.config.lastPay = kb.draft.pay;
+  kbSaveConfig();
+
+  document.querySelector("#kbAmount").value = "";
+  document.querySelector("#kbNote").value = "";
+  kb.draft.cat = "";
+  kb.draft.unplanned = false;
+  document.querySelector("#kbHint").textContent = `${yen(amount)} を記録しました。`;
+  kbRenderAll();
+}
+
+function kbBoot() {
+  kbLoad();
+  kb.date = kbToday();
+
+  document.querySelector("#kbDate").addEventListener("change", (event) => {
+    kb.date = event.target.value || kbToday();
+    kbRenderAll();
+  });
+
+  document.querySelector("#kbCatGrid").addEventListener("click", (event) => {
+    const cat = event.target.dataset.cat;
+    if (!cat) return;
+    kb.draft.cat = cat;
+    kbRenderInput();
+  });
+
+  document.querySelector("#kbPayGrid").addEventListener("click", (event) => {
+    const pay = event.target.dataset.pay;
+    if (!pay) return;
+    kb.draft.pay = pay;
+    kbRenderInput();
+  });
+
+  document.querySelector("#kbUnplanned").addEventListener("click", () => {
+    kb.draft.unplanned = !kb.draft.unplanned;
+    kbRenderInput();
+  });
+
+  document.querySelector("#kbForm").addEventListener("submit", (event) => {
+    event.preventDefault();
+    kbAddExpense();
+  });
+
+  document.querySelector("#kbTodayList").addEventListener("click", (event) => {
+    const index = event.target.dataset.kbRemove;
+    if (index === undefined) return;
+    const list = kb.expenses[kb.date] || [];
+    list.splice(Number(index), 1);
+    if (!list.length) delete kb.expenses[kb.date];
+    else kb.expenses[kb.date] = list;
+    kbSaveExpenses();
+    kbRenderAll();
+  });
+
+  document.querySelector("#kbBalanceSave").addEventListener("click", () => {
+    const input = document.querySelector("#kbBalanceInput");
+    const actual = Number(input.value);
+    if (!input.value) return;
+    const estimated = kbEstimatedBalance();
+    kb.config.balance = { amount: actual, updatedAt: kbToday() };
+    kbSaveConfig();
+    input.value = "";
+    const note = document.querySelector("#kbBalanceDiff");
+    if (estimated === null) {
+      note.textContent = "残高を登録しました。次に更新したときズレが出ます。";
+    } else {
+      const diff = actual - estimated;
+      note.textContent =
+        Math.abs(diff) < 100
+          ? `ぴったり合っています（差 ${yen(diff)}）。記録漏れなし。`
+          : diff < 0
+          ? `推定より ${yen(Math.abs(diff))} 少ない＝この分の支出を記録し忘れています。`
+          : `推定より ${yen(diff)} 多い＝収入か、記録した支出が実際より多いかもしれません。`;
+    }
+    kbRenderAll();
+  });
+
+  document.querySelector("#kbFixedList").addEventListener("input", (event) => {
+    const el = event.target;
+    const amountIndex = el.dataset.fixedAmount;
+    const dayIndex = el.dataset.fixedDay;
+    if (amountIndex !== undefined) kb.config.fixed[Number(amountIndex)].amount = Number(el.value) || 0;
+    else if (dayIndex !== undefined) kb.config.fixed[Number(dayIndex)].day = Number(el.value) || 27;
+    else return;
+    kbSaveConfig();
+    kbRenderMonth();
+    kbRenderFuture();
+  });
+
+  kbRenderAll();
+}
+
+</script>
     <script>
 const state = {
   selectedTemplate: "",
@@ -775,8 +2003,6 @@ const dailyGroups = [
       { key: "workLoad", label: "仕事の負荷", type: "scale0" },
       { key: "workAchieve", label: "仕事の達成感", type: "scale0" },
       { key: "lifeDisorder", label: "生活の乱れ", type: "scale", reverse: true },
-      { key: "extraExpense", label: "予定外支出", type: "toggle" },
-      { key: "expenseMemo", label: "支出メモ", type: "text", placeholder: "何に使ったか", dependsOn: "extraExpense" },
       { key: "av", label: "AV", type: "toggle" },
       { key: "masturbation", label: "自慰行為", type: "toggle" }
     ]
@@ -785,9 +2011,21 @@ const dailyGroups = [
     title: "日記",
     fields: [
       { key: "diary", label: "今日起きたこと", type: "textarea" },
+      {
+        key: "reaction",
+        label: "今日言われたこと（他人の反応）",
+        type: "textarea",
+        placeholder: "褒められた・注意された・反応が薄かった 等。自分の評価と食い違うほど価値がある"
+      },
       { key: "good", label: "良かったこと・できたこと", type: "textarea" },
       { key: "worry", label: "不安・モヤモヤ・愚痴", type: "textarea" },
-      { key: "tomorrow", label: "明日どうしたいか", type: "textarea" }
+      { key: "tomorrow", label: "明日どうしたいか（願望）", type: "textarea" },
+      {
+        key: "prediction",
+        label: "明日はたぶんこうなる（予測）",
+        type: "textarea",
+        placeholder: "願望ではなく予想。外れたところに未知がある"
+      }
     ]
   }
 ];
@@ -1103,18 +2341,26 @@ function buildDailyMarkdown() {
   lines.push(`- 仕事の負荷：${logVal("workLoad")}`);
   lines.push(`- 仕事の達成感：${logVal("workAchieve")}`);
   lines.push(`- 生活の乱れ：${logVal("lifeDisorder")}`);
-  lines.push(`- 予定外支出：${state.log.extraExpense ? 1 : 0}`);
-  if (state.log.extraExpense && logVal("expenseMemo")) {
-    lines.push(`- 支出メモ：${logVal("expenseMemo")}`);
+
+  // 支出は家計簿タブから自動で入る（手入力しない）
+  const money = typeof kbSummaryFor === "function" ? kbSummaryFor(date) : null;
+  lines.push(`- 予定外支出：${money && money.unplanned > 0 ? 1 : 0}`);
+  lines.push(`- 今日の支出：${money ? money.total : 0}円`);
+  lines.push(`- 予定外支出額：${money ? money.unplanned : 0}円`);
+  if (money && money.top.length) {
+    lines.push(`- 支出内訳：${money.top.map((item) => `${item.cat}${item.amount}`).join("／")}`);
   }
+
   lines.push(`- AV：${state.log.av ? 1 : 0}`);
   lines.push(`- 自慰行為：${state.log.masturbation ? 1 : 0}`);
 
   const diaryBlocks = [
     ["## 今日起きたこと", logVal("diary")],
+    ["## 今日言われたこと（他人の反応）", logVal("reaction")],
     ["## 良かったこと・できたこと", logVal("good")],
     ["## 不安・モヤモヤ・愚痴", logVal("worry")],
-    ["## 明日どうしたいか", logVal("tomorrow")]
+    ["## 明日どうしたいか", logVal("tomorrow")],
+    ["## 明日の予測", logVal("prediction")]
   ];
   for (const [head, text] of diaryBlocks) {
     lines.push("", head);
@@ -1373,10 +2619,6 @@ function boot() {
     group.querySelectorAll("button.scale-btn").forEach((other) => {
       other.classList.toggle("active", Number(other.dataset.val) === val);
     });
-    if (key === "extraExpense") {
-      const memo = dailyForm.querySelector('[data-field="expenseMemo"]');
-      if (memo) memo.classList.toggle("hidden", !val);
-    }
     saveLog();
     updateOutput();
   });
@@ -1393,8 +2635,67 @@ function boot() {
   document.querySelector("#copyButton").addEventListener("click", copyMarkdown);
 }
 
-boot();
+// ===== タブ切り替え =====
 
-    </script>
+const TAB_TITLES = { log: "今日の記録", money: "支出を記録", future: "1年後の見通し" };
+
+function setupTabs() {
+  const bar = document.querySelector("#tabBar");
+  bar.addEventListener("click", (event) => {
+    const tab = event.target.dataset.tab;
+    if (!tab) return;
+    bar.querySelectorAll("button").forEach((button) => {
+      button.classList.toggle("active", button.dataset.tab === tab);
+    });
+    for (const key of Object.keys(TAB_TITLES)) {
+      document.querySelector(`#tab-${key}`).hidden = key !== tab;
+    }
+    document.querySelector("#appTitle").textContent = TAB_TITLES[tab];
+    document.querySelector("#copyButton").hidden = tab !== "log";
+    window.scrollTo(0, 0);
+  });
+}
+
+// ===== 更新の仕組み =====
+// 開くたびに新しい版を取りに行く（network-first）。
+// 差し替わったらバナーを出すだけで、ホーム画面に追加し直す必要はない。
+
+function setupUpdates() {
+  if (!("serviceWorker" in navigator)) return;
+  const hadController = Boolean(navigator.serviceWorker.controller);
+
+  navigator.serviceWorker.register("sw.js").then((registration) => {
+    registration.addEventListener("updatefound", () => {
+      const incoming = registration.installing;
+      if (!incoming) return;
+      incoming.addEventListener("statechange", () => {
+        if (incoming.state === "installed" && navigator.serviceWorker.controller) {
+          document.querySelector("#updateBanner").hidden = false;
+        }
+      });
+    });
+    // アプリを開いた瞬間に更新チェック
+    registration.update();
+  }).catch(() => {});
+
+  document.querySelector("#updateReload").addEventListener("click", () => {
+    location.reload();
+  });
+
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    // 初回インストール時は既に最新なのでリロードしない
+    if (!hadController || refreshing) return;
+    refreshing = true;
+    location.reload();
+  });
+}
+
+boot();
+kbBoot();
+setupTabs();
+setupUpdates();
+
+</script>
   </body>
 </html>
