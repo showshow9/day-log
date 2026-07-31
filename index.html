@@ -800,6 +800,31 @@ textarea {
   line-height: 1.45;
 }
 
+.kb-card-save {
+  grid-column: 1 / -1;
+  background: #e8f1ea;
+  border-color: #c8ddcd;
+}
+
+.kb-card-save strong {
+  color: var(--green);
+}
+
+.kb-card-save strong.kb-warn {
+  color: var(--rose);
+}
+
+.kb-save-extra {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px dashed #c8ddcd;
+}
+
+.kb-save-extra strong {
+  display: inline;
+  font-size: 13px;
+}
+
 .kb-track {
   margin-top: 8px;
   height: 6px;
@@ -1427,7 +1452,8 @@ const DEFAULT_CONFIG = {
   // pay＝引き落とし元。"口座"＝銀行から直接／カード名＝そのカードの請求に乗る（二重計上を防ぐ）
   fixed: [
     { name: "家賃", amount: 53200, day: 27, pay: "口座" },
-    { name: "NISA積立", amount: 20000, day: 27, pay: "三井住友" },
+    // invest＝消えるお金ではなく自分の資産に移るだけ。貯金カードで別枠にする
+    { name: "NISA積立", amount: 20000, day: 27, pay: "三井住友", invest: true },
     { name: "奨学金", amount: 17000, day: 27, pay: "口座", from: "2026-10" },
     { name: "ハーモニーホール福井", amount: 16000, day: 27, pay: "口座" },
     { name: "ガス", amount: 4000, day: 27, pay: "口座" },
@@ -1578,6 +1604,42 @@ function kbRemainingFixed(dateStr) {
     .filter((item) => (item.pay || "口座") === "口座")
     .filter((item) => Number(item.day || 27) >= day)
     .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+}
+
+// 今月の貯金。「使えるお金」が今の残高の話なのに対して、これは今月の収支の話。
+// NISAは消えるお金ではなく自分の資産に移るだけなので、現金の貯金とは分けて出す。
+function kbSavings(dateStr) {
+  const ym = kbMonthKey(dateStr);
+  const day = Number(dateStr.slice(8, 10));
+  const daysInMonth = kbDaysInMonth(ym);
+
+  const takeHome = kbTakeHome(ym);
+  const fixedAll = kbFixedFor(ym);
+  const invest = fixedAll
+    .filter((item) => item.invest)
+    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const fixedTotal = fixedAll.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+
+  const spent = kbExpensesInMonth(ym).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const daysLeft = Math.max(0, daysInMonth - day);
+  const projectedVariable = spent + daysLeft * kbDailyPace(dateStr);
+
+  // 比べる相手は、実測平均があればそれ。無ければ自分で立てた仮上限
+  const avg = kbCategoryAverage(ym);
+  const baseline = avg.count ? avg.total : kbBudgetTotal();
+
+  return {
+    cash: takeHome - fixedTotal - projectedVariable, // 現金で残る見込み
+    invest,
+    takeHome,
+    fixedTotal,
+    spent,
+    projectedVariable,
+    baseline,
+    baselineIsActual: Boolean(avg.count),
+    diff: baseline - projectedVariable, // プラス＝いつもより使っていない
+    daysLeft
+  };
 }
 
 // 今月これから入ってくる給料（給料日がまだ来ていなければ手取り、来ていれば0）
@@ -1790,6 +1852,7 @@ function kbRenderMonth() {
 
   const daysLeft = Math.max(0, kbDaysInMonth(ym) - Number(asOf.slice(8, 10)));
   const forecast = usable === null ? null : usable - daysLeft * kbDailyPace(asOf);
+  const savings = kbSavings(asOf);
 
   document.querySelector("#kbCards").innerHTML = `
     <div class="kb-card">
@@ -1821,6 +1884,25 @@ function kbRenderMonth() {
         forecast === null
           ? "銀行残高を入れると出ます"
           : `残り${daysLeft}日 × 1日あたり ${yen(kbDailyPace(asOf))} で計算`
+      }</small>
+    </div>
+    <div class="kb-card kb-card-save">
+      <p class="eyebrow">今月の貯金（${savings.daysLeft ? "この調子でいくと" : "確定"}）</p>
+      <strong class="${savings.cash < 0 ? "kb-warn" : ""}">${yen(savings.cash)}</strong>
+      <small>手取り ${yen(savings.takeHome)} − 固定費 ${yen(
+    savings.fixedTotal
+  )} − 変動費 ${yen(savings.projectedVariable)}</small>
+      <small class="kb-save-extra">＋ 投資にまわる ${yen(
+        savings.invest
+      )}（NISA）＝ 資産の増え <strong>${yen(savings.cash + savings.invest)}</strong></small>
+      <small>${
+        savings.diff >= 0
+          ? `${savings.baselineIsActual ? "いつもの月" : "仮上限"}より ${yen(
+              savings.diff
+            )} 少ないペース`
+          : `${savings.baselineIsActual ? "いつもの月" : "仮上限"}より ${yen(
+              -savings.diff
+            )} 多いペース`
       }</small>
     </div>`;
 
