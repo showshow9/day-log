@@ -1,0 +1,11 @@
+{
+  "name": "日次ログ・家計簿",
+  "short_name": "日次ログ",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f7f7f4",
+  "theme_color": "#f7f7f4",
+  "lang": "ja"
+}
