@@ -969,21 +969,69 @@ textarea {
 }
 
 .kb-fixed-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 0;
+  padding: 8px 0;
   border-bottom: 1px solid var(--line);
   font-size: 13px;
 }
 
-.kb-fixed-row > span {
-  flex: 1;
-  min-width: 0;
+.kb-fixed-row:last-child {
+  border-bottom: 0;
 }
 
-.kb-fixed-row.future > span {
+.kb-fixed-name {
+  margin-bottom: 4px;
+  font-weight: 650;
+}
+
+.kb-fixed-row.future .kb-fixed-name {
   color: var(--muted);
+}
+
+.kb-fixed-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.kb-fixed-row select {
+  padding: 5px 7px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.kb-income-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+}
+
+.kb-income-row label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.kb-income-row input {
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 700;
+  text-align: right;
+  width: 100px;
+}
+
+.kb-income-row #kbPaydayInput {
+  width: 52px;
 }
 
 .kb-fixed-row label {
@@ -1306,12 +1354,23 @@ textarea {
       <section class="panel">
         <div class="panel-heading">
           <div>
+            <p class="eyebrow">毎月入るお金</p>
+            <h2>収入</h2>
+          </div>
+        </div>
+        <div class="kb-income-row" id="kbIncomeRow"></div>
+        <p class="kb-note">給料日を入れておくと、月初でも「使えるお金」がマイナスに見えなくなります。</p>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
             <p class="eyebrow">自動計上</p>
             <h2>固定費</h2>
           </div>
         </div>
         <div id="kbFixedList"></div>
-        <p class="kb-note">引落日は全部27日で仮置き。実際の日に直すと「使えるお金」が正確になります。金額も実額に直せます。</p>
+        <p class="kb-note" id="kbFixedNote"></p>
       </section>
     </main>
 
@@ -1360,25 +1419,28 @@ const PAY_METHODS = [
 
 const DEFAULT_CONFIG = {
   takeHome: 198727,
+  // 給料日。ここが無いと「使えるお金」が月初にマイナスに見える
+  payday: 25,
   // 住民税：2026年入社で前年所得ゼロのため今は未課税。2027年6月から乗る（概算）
   residentTax: { from: "2027-06", amount: 10000 },
+  // pay＝引き落とし元。"口座"＝銀行から直接／カード名＝そのカードの請求に乗る（二重計上を防ぐ）
   fixed: [
-    { name: "家賃", amount: 53200, day: 27 },
-    { name: "NISA積立", amount: 20000, day: 27 },
-    { name: "奨学金", amount: 17000, day: 27, from: "2026-10" },
-    { name: "ハーモニーホール福井", amount: 16000, day: 27 },
-    { name: "ガス", amount: 4000, day: 27 },
-    { name: "iPhone16", amount: 3500, day: 27 },
-    { name: "電気", amount: 3500, day: 27 },
-    { name: "楽天", amount: 3200, day: 27 },
-    { name: "ChatGPT", amount: 3000, day: 27 },
-    { name: "Claude", amount: 3000, day: 27 },
-    { name: "ヘアカット", amount: 3000, day: 27 },
-    { name: "ジム", amount: 2600, day: 27 },
-    { name: "水道", amount: 2500, day: 27 },
-    { name: "Apple Music", amount: 1180, day: 27 },
-    { name: "Amazon", amount: 600, day: 27 },
-    { name: "iCloud", amount: 180, day: 27 }
+    { name: "家賃", amount: 53200, day: 27, pay: "口座" },
+    { name: "NISA積立", amount: 20000, day: 27, pay: "三井住友" },
+    { name: "奨学金", amount: 17000, day: 27, pay: "口座", from: "2026-10" },
+    { name: "ハーモニーホール福井", amount: 16000, day: 27, pay: "口座" },
+    { name: "ガス", amount: 4000, day: 27, pay: "口座" },
+    { name: "iPhone16", amount: 3500, day: 27, pay: "口座" },
+    { name: "電気", amount: 3500, day: 27, pay: "口座" },
+    { name: "楽天", amount: 3200, day: 27, pay: "口座" },
+    { name: "ChatGPT", amount: 3000, day: 27, pay: "口座" },
+    { name: "Claude", amount: 3000, day: 30, pay: "口座" },
+    { name: "ヘアカット", amount: 3000, day: 27, pay: "口座" },
+    { name: "ジム", amount: 2600, day: 27, pay: "口座" },
+    { name: "水道", amount: 2500, day: 27, pay: "口座" },
+    { name: "Apple Music", amount: 1180, day: 20, pay: "口座" },
+    { name: "Amazon", amount: 600, day: 27, pay: "口座" },
+    { name: "iCloud", amount: 150, day: 25, pay: "口座" }
   ],
   // 仮上限。翔大が作った計画値なので正しくない前提。実測平均を横に併記して1ヶ月後に直す
   budgets: {
@@ -1419,10 +1481,17 @@ function kbReadJson(key, fallback) {
 function kbLoad() {
   kb.expenses = kbReadJson(EXPENSE_KEY, {});
   const stored = kbReadJson(CONFIG_KEY, {});
+
+  // 保存済みの固定費に、後から足した項目（pay など）を埋める
+  const fixed = (stored.fixed || DEFAULT_CONFIG.fixed).map((item) => {
+    const preset = DEFAULT_CONFIG.fixed.find((d) => d.name === item.name);
+    return { ...item, pay: item.pay || preset?.pay || "口座" };
+  });
+
   kb.config = {
     ...DEFAULT_CONFIG,
     ...stored,
-    fixed: stored.fixed || DEFAULT_CONFIG.fixed,
+    fixed,
     budgets: { ...DEFAULT_CONFIG.budgets, ...(stored.budgets || {}) },
     cards: { ...DEFAULT_CONFIG.cards, ...(stored.cards || {}) },
     balance: { ...DEFAULT_CONFIG.balance, ...(stored.balance || {}) },
@@ -1498,13 +1567,23 @@ function kbTakeHome(ym) {
   return ym >= tax.from ? base - Number(tax.amount || 0) : base;
 }
 
-// 今月これから出ていく固定費（引落日が今日以降のもの）
+// 今月これから口座から出ていく固定費（引落日が今日以降）。
+// カード払いの固定費はここに入れない——カードの請求額の中に既に入っているので、
+// 入れると同じお金を二重に数えることになる（例：NISA積立20,000＝三井住友の請求）。
 function kbRemainingFixed(dateStr) {
   const ym = kbMonthKey(dateStr);
   const day = Number(dateStr.slice(8, 10));
   return kbFixedFor(ym)
+    .filter((item) => (item.pay || "口座") === "口座")
     .filter((item) => Number(item.day || 27) >= day)
     .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+}
+
+// 今月これから入ってくる給料（給料日がまだ来ていなければ手取り、来ていれば0）
+function kbIncomingPay(dateStr) {
+  const day = Number(dateStr.slice(8, 10));
+  const payday = Number(kb.config.payday || 25);
+  return day <= payday ? kbTakeHome(kbMonthKey(dateStr)) : 0;
 }
 
 /* ---------- カードの未引落（＝タイムラグの本体） ---------- */
@@ -1700,7 +1779,9 @@ function kbRenderMonth() {
   const outstandingTotal = [...outstanding.values()].reduce((a, b) => a + b, 0);
   const estimated = kbEstimatedBalance();
   const remainingFixed = kbRemainingFixed(asOf);
-  const usable = estimated === null ? null : estimated - outstandingTotal - remainingFixed;
+  const incoming = kbIncomingPay(asOf);
+  const usable =
+    estimated === null ? null : estimated + incoming - outstandingTotal - remainingFixed;
 
   const spent = kbExpensesInMonth(ym).reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const budget = kbBudgetTotal();
@@ -1715,9 +1796,9 @@ function kbRenderMonth() {
       <strong class="${usable !== null && usable < 0 ? "kb-warn" : ""}">${
     usable === null ? "残高を入れる" : yen(usable)
   }</strong>
-      <small>銀行残高 − 未引落カード ${yen(outstandingTotal)} − 今月これからの固定費 ${yen(
-    remainingFixed
-  )}</small>
+      <small>推定残高 ${estimated === null ? "—" : yen(estimated)}${
+    incoming ? ` ＋ 給料 ${yen(incoming)}（${kb.config.payday}日）` : ""
+  } − 未引落カード ${yen(outstandingTotal)} − 口座払いの固定費 ${yen(remainingFixed)}</small>
     </div>
     <div class="kb-card">
       <p class="eyebrow">今月の変動費</p>
@@ -1867,23 +1948,51 @@ function kbRenderFuture() {
     ? `実測 ${avg.count}ヶ月分の平均で計算しています。月が増えるほど精度が上がります。`
     : `変動費はまだ仮上限（自分で立てた計画値）で計算しています。1ヶ月分の実測が溜まると自動で実測平均に切り替わり、この表が本物になります。`;
 
+  // 収入
+  document.querySelector("#kbIncomeRow").innerHTML = `
+    <label>手取り ¥<input type="number" inputmode="numeric" id="kbTakeHomeInput" value="${Number(
+      kb.config.takeHome
+    )}"></label>
+    <label>給料日 <input type="number" inputmode="numeric" min="1" max="31" id="kbPaydayInput" value="${Number(
+      kb.config.payday || 25
+    )}">日</label>`;
+
   // 固定費の内訳
+  const payOptions = ["口座", ...PAY_METHODS.filter((m) => m.type === "credit").map((m) => m.key)];
+  const cardPaid = kb.config.fixed.filter((item) => (item.pay || "口座") !== "口座");
+
   document.querySelector("#kbFixedList").innerHTML = kb.config.fixed
     .map(
       (item, index) => `
       <div class="kb-fixed-row${item.from && item.from > now ? " future" : ""}">
-        <span>${escapeHtml(item.name)}${
+        <div class="kb-fixed-name">${escapeHtml(item.name)}${
         item.from ? `<em class="kb-flag">${escapeHtml(item.from)}〜</em>` : ""
-      }</span>
-        <label>¥<input type="number" inputmode="numeric" data-fixed-amount="${index}" value="${Number(
+      }</div>
+        <div class="kb-fixed-fields">
+          <label>¥<input type="number" inputmode="numeric" data-fixed-amount="${index}" value="${Number(
         item.amount
       )}"></label>
-        <label>引落<input type="number" inputmode="numeric" min="1" max="31" data-fixed-day="${index}" value="${Number(
+          <label>引落<input type="number" inputmode="numeric" min="1" max="31" data-fixed-day="${index}" value="${Number(
         item.day || 27
       )}">日</label>
+          <label><select data-fixed-pay="${index}">${payOptions
+        .map(
+          (option) =>
+            `<option value="${escapeHtml(option)}"${
+              (item.pay || "口座") === option ? " selected" : ""
+            }>${escapeHtml(option === "口座" ? "口座" : option)}</option>`
+        )
+        .join("")}</select></label>
+        </div>
       </div>`
     )
     .join("");
+
+  document.querySelector("#kbFixedNote").innerHTML = cardPaid.length
+    ? `カード払いにした固定費（${cardPaid
+        .map((item) => escapeHtml(item.name))
+        .join("・")}）は、<strong>「今月これからの固定費」には数えません</strong>。カードの請求額の中に既に入っているので、数えると同じお金を二重に引くことになります。`
+    : `引落日は仮置き。実際の日に直すと「使えるお金」が正確になります。<strong>カードで払っているものは支払い元をカードに変えてください</strong>（二重計上を防ぎます）。`;
 }
 
 function kbRenderAll() {
@@ -2020,7 +2129,9 @@ function kbBoot() {
     kbRenderMonth();
   });
 
-  document.querySelector("#kbFixedList").addEventListener("input", (event) => {
+  const fixedList = document.querySelector("#kbFixedList");
+
+  fixedList.addEventListener("input", (event) => {
     const el = event.target;
     const amountIndex = el.dataset.fixedAmount;
     const dayIndex = el.dataset.fixedDay;
@@ -2029,7 +2140,26 @@ function kbBoot() {
     else return;
     kbSaveConfig();
     kbRenderMonth();
+  });
+
+  // 支払い元の変更（selectはchangeで拾う。再描画するとフォーカスが飛ぶので入力欄とは分ける）
+  fixedList.addEventListener("change", (event) => {
+    const index = event.target.dataset.fixedPay;
+    if (index === undefined) return;
+    kb.config.fixed[Number(index)].pay = event.target.value;
+    kbSaveConfig();
+    kbRenderMonth();
     kbRenderFuture();
+  });
+
+  // 収入
+  document.querySelector("#kbIncomeRow").addEventListener("input", (event) => {
+    const el = event.target;
+    if (el.id === "kbTakeHomeInput") kb.config.takeHome = Number(el.value) || 0;
+    else if (el.id === "kbPaydayInput") kb.config.payday = Number(el.value) || 25;
+    else return;
+    kbSaveConfig();
+    kbRenderMonth();
   });
 
   kbRenderAll();
