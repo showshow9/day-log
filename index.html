@@ -43,6 +43,27 @@ input,
 select,
 textarea {
   font: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* タップした後に黒い枠が残る問題の対策（2026-08-02）。
+   iOSはボタンをタップしただけでも :focus が付き、ブラウザ既定のフォーカスリングが
+   描かれる。タブバーは backdrop-filter + sticky で合成レイヤーになっているため、
+   枠が消えるべき場面でも再描画されず残ることがある（何度か切り替えると消えるのはこのため）。
+   → 指のタップでは枠を出さず、キーボード操作（:focus-visible）のときだけ出す。 */
+button:focus:not(:focus-visible),
+select:focus:not(:focus-visible),
+input:focus:not(:focus-visible),
+textarea:focus:not(:focus-visible) {
+  outline: none;
+}
+
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
 }
 
 /* ヘッダーは固定しない。タブバーと同じ top:0 に貼り付いて重なるため（2026-07-31 修正）。
@@ -572,6 +593,9 @@ textarea {
   background: var(--ink);
   border-color: var(--ink);
   color: #fff;
+  /* timeline.css の button.active（気分チップ用）が inset の白い枠を付けてくるが、
+     タブでは黒地に白枠＝二重の枠に見えるだけなので打ち消す（2026-08-02） */
+  box-shadow: none;
 }
 
 .tab-panel[hidden] {
@@ -670,12 +694,20 @@ textarea {
 }
 
 #kbNote {
-  flex: 1;
-  min-width: 140px;
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 10px;
   padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
+}
+
+/* 「その他」を選んだときだけメモが必須になる */
+#kbNote.required {
+  border-color: var(--rose);
+  background: #fdf6f7;
 }
 
 .kb-submit {
@@ -1002,13 +1034,28 @@ textarea {
   border-bottom: 0;
 }
 
-.kb-fixed-name {
+.kb-fixed-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 4px;
+}
+
+.kb-fixed-name {
+  flex: 1;
+  min-width: 0;
   font-weight: 650;
 }
 
-.kb-fixed-row.future .kb-fixed-name {
-  color: var(--muted);
+.kb-fixed-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 5px;
+}
+
+.kb-fixed-row.future .kb-fixed-name,
+.kb-fixed-row.future .kb-fixed-fields {
+  opacity: 0.55;
 }
 
 .kb-fixed-fields {
@@ -1019,7 +1066,8 @@ textarea {
 }
 
 .kb-fixed-row select {
-  padding: 5px 7px;
+  padding: 5px 4px;
+  max-width: 92px;
   border: 1px solid var(--line);
   border-radius: 6px;
   background: var(--surface);
@@ -1067,7 +1115,7 @@ textarea {
 }
 
 .kb-fixed-row input {
-  width: 74px;
+  width: 68px;
   padding: 6px 8px;
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -1079,6 +1127,177 @@ textarea {
 
 .kb-fixed-row input[data-fixed-day] {
   width: 46px;
+}
+
+/* ===== 固定費：状態・期間・追加削除 ===== */
+
+.kb-fixed-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.kb-fixed-summary strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+/* 引落日を直しても何も動かないと「反映されていない」ように見えるので、状態を必ず出す */
+.kb-fixed-state {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--soft);
+  color: var(--muted);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+.kb-fixed-state.done {
+  background: #e3ece2;
+  color: var(--green, #587b3f);
+}
+
+.kb-fixed-state.upcoming {
+  background: #e6edf4;
+  color: #316f9f;
+}
+
+.kb-fixed-state.card {
+  background: #f3ece2;
+  color: #a76a24;
+}
+
+/* 期間は普段たたんでおく（設定済みの行だけ開いた状態で出す） */
+.kb-fixed-period {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  margin-top: 6px;
+}
+
+.kb-fixed-period[hidden] {
+  display: none;
+}
+
+.kb-fixed-period small {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.kb-fixed-row input[type="month"] {
+  width: auto;
+  max-width: 120px;
+  padding: 4px 6px;
+  font-size: 11px;
+  text-align: left;
+}
+
+.kb-fixed-link,
+.kb-fixed-remove {
+  padding: 4px 9px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+
+.kb-fixed-confirm {
+  margin-top: 8px;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--soft);
+}
+
+.kb-fixed-confirm p {
+  margin: 0 0 8px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.kb-confirm-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.kb-confirm-buttons button {
+  padding: 8px 11px;
+  border: 1px solid var(--ink);
+  border-radius: 6px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.kb-confirm-buttons button.ghost {
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--muted);
+}
+
+.kb-confirm-buttons button.danger {
+  border-color: var(--rose);
+  background: var(--rose);
+}
+
+.kb-fixed-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.kb-fixed-add input,
+.kb-fixed-add select {
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+}
+
+#kbFixedNewName {
+  flex: 1;
+  min-width: 120px;
+}
+
+#kbFixedNewAmount {
+  width: 84px;
+  text-align: right;
+}
+
+#kbFixedNewDay {
+  width: 52px;
+  text-align: right;
+}
+
+#kbFixedAdd {
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--green);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
 }
 
 .kb-note {
@@ -1299,11 +1518,12 @@ textarea {
 
           <div class="kb-cat-grid" id="kbCatGrid"></div>
 
+          <input id="kbNote" type="text" placeholder="メモ（任意）例：疲れて惣菜">
+
           <div class="kb-pay-grid" id="kbPayGrid"></div>
 
           <div class="kb-flags">
             <button type="button" id="kbUnplanned">予定外だった</button>
-            <input id="kbNote" type="text" placeholder="メモ（任意）例：疲れて惣菜">
           </div>
 
           <button class="kb-submit" type="submit">記録する</button>
@@ -1344,6 +1564,7 @@ textarea {
           </div>
         </div>
         <div class="category-summary" id="kbCatBreakdown"></div>
+        <div id="kbOtherBreakdown"></div>
         <p class="kb-note">仮上限は自分で立てた計画値なので、当たっていない前提。実測平均が出たらそちらを見る。</p>
       </section>
 
@@ -1394,7 +1615,18 @@ textarea {
             <h2>固定費</h2>
           </div>
         </div>
+        <div class="kb-fixed-summary" id="kbFixedSummary"></div>
         <div id="kbFixedList"></div>
+
+        <div class="kb-fixed-add">
+          <input id="kbFixedNewName" type="text" placeholder="項目名（例：ジム）">
+          <input id="kbFixedNewAmount" type="number" inputmode="numeric" min="0" placeholder="金額">
+          <input id="kbFixedNewDay" type="number" inputmode="numeric" min="1" max="31" placeholder="27">
+          <select id="kbFixedNewPay"></select>
+          <button type="button" id="kbFixedAdd">追加</button>
+        </div>
+        <p class="kb-note" id="kbFixedAddHint">追加した項目は<strong>今月から</strong>効きます。過去の月の計算は変わりません。</p>
+
         <p class="kb-note" id="kbFixedNote"></p>
       </section>
     </main>
@@ -1492,7 +1724,9 @@ const kb = {
   expenses: {},
   config: {},
   draft: { amount: "", cat: "", pay: "デビット", unplanned: false, note: "" },
-  date: ""
+  date: "",
+  // 固定費の金額変更で「訂正か、今月からか」を選ぶまで確定させない入力値
+  pendingFixed: {}
 };
 
 /* ---------- 保存・読み込み ---------- */
@@ -1580,8 +1814,54 @@ function kbExpensesInMonth(ym) {
 
 /* ---------- 固定費・手取り（月ごとに変わる） ---------- */
 
+// from＝この月から効く／to＝この月まで効く。両方とも空なら「ずっと」。
+// これが無いと金額を直したときに過去の月まで遡って書き換わり、実測が実測でなくなる。
+function kbFixedActive(item, ym) {
+  if (item.from && ym < item.from) return false;
+  if (item.to && ym > item.to) return false;
+  return true;
+}
+
 function kbFixedFor(ym) {
-  return kb.config.fixed.filter((item) => !item.from || ym >= item.from);
+  return kb.config.fixed.filter((item) => kbFixedActive(item, ym));
+}
+
+// 引落日は月末を超えられない（31日指定でも2月は28日）
+function kbFixedDay(item, ym) {
+  return Math.min(Number(item.day || 27), kbDaysInMonth(ym));
+}
+
+// その固定費が今月「もう出ていったか／これから出ていくか」。
+// 引落日を直しても画面が何も変わらないと「反映されていない」ように見えるので、状態は必ず出す。
+function kbFixedStatus(item, dateStr) {
+  const ym = kbMonthKey(dateStr);
+  if (!kbFixedActive(item, ym)) {
+    return {
+      kind: "off",
+      label: item.from && ym < item.from ? `${item.from}から` : `${item.to} で終了`
+    };
+  }
+  const day = kbFixedDay(item, ym);
+  const md = `${Number(ym.slice(5, 7))}/${day}`;
+  const pay = item.pay || "口座";
+  if (pay !== "口座") return { kind: "card", label: `${md} ${pay}の請求に乗る` };
+  return Number(dateStr.slice(8, 10)) > day
+    ? { kind: "done", label: `${md} 引落済み` }
+    : { kind: "upcoming", label: `${md} 引落予定` };
+}
+
+// 今月の固定費を「済み／これから／カード」に分ける。合計だけだと何が起きたか見えない。
+function kbFixedMonthSplit(dateStr) {
+  const out = { done: 0, upcoming: 0, card: 0, total: 0 };
+  for (const item of kbFixedFor(kbMonthKey(dateStr))) {
+    const amount = Number(item.amount || 0);
+    out.total += amount;
+    const kind = kbFixedStatus(item, dateStr).kind;
+    if (kind === "card") out.card += amount;
+    else if (kind === "done") out.done += amount;
+    else out.upcoming += amount;
+  }
+  return out;
 }
 
 function kbFixedTotal(ym) {
@@ -1602,7 +1882,7 @@ function kbRemainingFixed(dateStr) {
   const day = Number(dateStr.slice(8, 10));
   return kbFixedFor(ym)
     .filter((item) => (item.pay || "口座") === "口座")
-    .filter((item) => Number(item.day || 27) >= day)
+    .filter((item) => kbFixedDay(item, ym) >= day)
     .reduce((sum, item) => sum + Number(item.amount || 0), 0);
 }
 
@@ -1676,15 +1956,48 @@ function kbOpeningPayDate(card, setAt) {
   return `${targetYm}-${pad(Math.min(payDay, kbDaysInMonth(targetYm)))}`;
 }
 
+// カード払いにした固定費（例：NISA積立20,000＝三井住友）のうち、
+// もう請求は立っているが、まだ口座から引き落とされていない分。
+// kbRemainingFixed は口座払いだけを見る（＝カード払いを意図的に除いている）ので、
+// これを足さないとカード払いの固定費がどこにも数えられずに消えてしまい、
+// 「使えるお金」が毎月その分だけ多く出る（2026-08-02 修正）。
+function kbFixedCardCharges(dateStr) {
+  const rows = [];
+  const ym = kbMonthKey(dateStr);
+  // 締め日→引落日のズレで最大2ヶ月ぶん残るので、3ヶ月遡れば取りこぼさない
+  for (let back = 3; back >= 0; back--) {
+    const targetYm = kbAddMonths(ym, -back);
+    for (const item of kbFixedFor(targetYm)) {
+      const pay = item.pay || "口座";
+      const method = PAY_METHODS.find((m) => m.key === pay);
+      if (!method || method.type !== "credit") continue;
+      const chargeDate = `${targetYm}-${pad(kbFixedDay(item, targetYm))}`;
+      if (chargeDate > dateStr) continue; // まだ請求が立っていない（来月の話）
+      if (kbPayoutDate({ date: chargeDate, pay }) <= dateStr) continue; // 引き落とし済み
+      rows.push({ card: pay, name: item.name, amount: Number(item.amount || 0) });
+    }
+  }
+  return rows;
+}
+
+// カード別に「まだ口座から出ていない額」を出す。内訳も返す（何が効いているか見えないと直せないので）
 function kbCardOutstanding(dateStr) {
   const byCard = new Map();
+  const bucket = (name) => {
+    if (!byCard.has(name)) {
+      byCard.set(name, { total: 0, opening: 0, logged: 0, fixed: 0, fixedNames: [] });
+    }
+    return byCard.get(name);
+  };
 
   // ① アプリを使い始める前の分（次回請求額）
   for (const [name, card] of Object.entries(kb.config.cards)) {
     const opening = Number(card.opening || 0);
     if (!opening || !card.openingSetAt) continue;
     if (kbOpeningPayDate(card, card.openingSetAt) <= dateStr) continue; // 引き落とし済み
-    byCard.set(name, (byCard.get(name) || 0) + opening);
+    const row = bucket(name);
+    row.opening += opening;
+    row.total += opening;
   }
 
   // ② アプリに記録した分
@@ -1692,7 +2005,17 @@ function kbCardOutstanding(dateStr) {
     const method = PAY_METHODS.find((m) => m.key === item.pay);
     if (!method || method.type !== "credit") continue;
     if (kbPayoutDate(item) <= dateStr) continue; // 引き落とし済み
-    byCard.set(item.pay, (byCard.get(item.pay) || 0) + Number(item.amount || 0));
+    const row = bucket(item.pay);
+    row.logged += Number(item.amount || 0);
+    row.total += Number(item.amount || 0);
+  }
+
+  // ③ カード払いの固定費（毎月自動で乗るので、記録しない＝②には出てこない）
+  for (const charge of kbFixedCardCharges(dateStr)) {
+    const row = bucket(charge.card);
+    row.fixed += charge.amount;
+    row.total += charge.amount;
+    row.fixedNames.push(charge.name);
   }
 
   return byCard;
@@ -1751,6 +2074,24 @@ function kbBudgetTotal() {
   return Object.values(kb.config.budgets).reduce((sum, v) => sum + Number(v || 0), 0);
 }
 
+// 「その他」に何を入れたかをメモ別に集計する。
+// カテゴリを先に増やすと1カテゴリあたりの件数が減って崩れた日の検証ができなくなるので、
+// まずここに溜めて、同じものが3回以上出たものだけカテゴリに昇格させる。
+function kbOtherBreakdown(ym) {
+  const map = new Map();
+  for (const item of kbExpensesInMonth(ym)) {
+    if (item.cat !== "その他") continue;
+    const key = (item.note || "").trim() || "（メモなし）";
+    const row = map.get(key) || { count: 0, total: 0 };
+    row.count += 1;
+    row.total += Number(item.amount || 0);
+    map.set(key, row);
+  }
+  return [...map.entries()]
+    .map(([note, row]) => ({ note, ...row }))
+    .sort((a, b) => b.total - a.total);
+}
+
 // 1日あたりの変動費（今月の実績ベース。データが薄い日は仮上限から日割り）
 function kbDailyPace(dateStr) {
   const ym = kbMonthKey(dateStr);
@@ -1799,6 +2140,12 @@ function kbRenderInput() {
       }>${escapeHtml(m.label)}</button>`
   ).join("");
 
+  // 「その他」は名前を書かないと後から何の支出か分からなくなるのでメモを必須にする
+  const note = document.querySelector("#kbNote");
+  const isOther = kb.draft.cat === "その他";
+  note.placeholder = isOther ? "何に使った？（例：ジム都度利用）" : "メモ（任意）例：疲れて惣菜";
+  note.classList.toggle("required", isOther);
+
   document.querySelector("#kbUnplanned").classList.toggle("on", kb.draft.unplanned);
   document.querySelector("#kbDate").value = kb.date;
 }
@@ -1839,7 +2186,7 @@ function kbRenderMonth() {
   const asOf = kbMonthKey(today) === ym ? today : `${ym}-${pad(kbDaysInMonth(ym))}`;
 
   const outstanding = kbCardOutstanding(asOf);
-  const outstandingTotal = [...outstanding.values()].reduce((a, b) => a + b, 0);
+  const outstandingTotal = [...outstanding.values()].reduce((sum, row) => sum + row.total, 0);
   const estimated = kbEstimatedBalance();
   const remainingFixed = kbRemainingFixed(asOf);
   const incoming = kbIncomingPay(asOf);
@@ -1941,13 +2288,51 @@ function kbRenderMonth() {
         .join("")
     : `<p class="empty">記録が増えるとここに出ます。</p>`;
 
+  // 「その他」の中身。カテゴリを増やすかどうかは、ここに3回出てから決める
+  const other = kbOtherBreakdown(ym);
+  document.querySelector("#kbOtherBreakdown").innerHTML = other.length
+    ? `<p class="eyebrow" style="margin-top:12px">「その他」の中身</p>` +
+      other
+        .map(
+          (row) => `
+        <div class="kb-row">
+          <span class="dot" style="background:${kbCatColor("その他")}"></span>
+          <span class="kb-row-cat">${escapeHtml(row.note)}</span>
+          <span class="kb-row-note">${row.count}件${
+            row.count >= 3 ? " ・カテゴリに昇格できます" : ""
+          }</span>
+          <strong class="kb-row-amount">${yen(row.total)}</strong>
+        </div>`
+        )
+        .join("") +
+      `<p class="kb-note">同じものが3回以上出たら、カテゴリに昇格させる合図。先に増やすと1カテゴリの件数が減って、崩れた日の検証ができなくなります。</p>`
+    : "";
+
   // カード別の未引落＋設定
   const cardRows = PAY_METHODS.filter((m) => m.type === "credit").map((m) => {
     const card = kb.config.cards[m.key] || {};
-    const amount = outstanding.get(m.key) || 0;
+    const detail = outstanding.get(m.key) || {
+      total: 0,
+      opening: 0,
+      logged: 0,
+      fixed: 0,
+      fixedNames: []
+    };
+    const amount = detail.total;
     const opening = Number(card.opening || 0);
     const openingLeft =
       opening && card.openingSetAt && kbOpeningPayDate(card, card.openingSetAt) > asOf;
+
+    // 内訳を出す。何が効いているか見えないと「次回請求」に固定費を二重に入れてしまう
+    const parts = [];
+    if (detail.opening) parts.push(`次回請求 ${yen(detail.opening)}`);
+    if (detail.fixed) {
+      parts.push(
+        `固定費 ${yen(detail.fixed)}（${escapeHtml([...new Set(detail.fixedNames)].join("・"))}）`
+      );
+    }
+    if (detail.logged) parts.push(`記録した支出 ${yen(detail.logged)}`);
+
     return `<div class="kb-card-block">
         <div class="kb-mini">
           <span>${escapeHtml(m.label)}${
@@ -1969,11 +2354,23 @@ function kbRenderMonth() {
             m.key
           )}" value="${opening || ""}" placeholder="0"></label>
         </div>
+        ${parts.length ? `<p class="kb-note">内訳：${parts.join(" ＋ ")}</p>` : ""}
         ${
           openingLeft
-            ? `<p class="kb-note">開始残 ${yen(opening)} は ${escapeHtml(
+            ? `<p class="kb-note">次回請求 ${yen(opening)} は ${escapeHtml(
                 kbOpeningPayDate(card, card.openingSetAt)
               )} に引き落とされる想定で計算中</p>`
+            : opening
+            ? `<p class="kb-note">次回請求に入れた ${yen(
+                opening
+              )} は引き落とし済みなので、もう計算に入っていません。新しい請求額に入れ替えてください。</p>`
+            : ""
+        }
+        ${
+          detail.fixed
+            ? `<p class="kb-note">${escapeHtml(
+                [...new Set(detail.fixedNames)].join("・")
+              )} は固定費として自動で入ります。<strong>次回請求には入れないでください</strong>（二重に引かれます）。</p>`
             : ""
         }
       </div>`;
@@ -2040,17 +2437,57 @@ function kbRenderFuture() {
       kb.config.payday || 25
     )}">日</label>`;
 
-  // 固定費の内訳
-  const payOptions = ["口座", ...PAY_METHODS.filter((m) => m.type === "credit").map((m) => m.key)];
+}
+
+/* ---------- 固定費リスト ---------- */
+
+function kbPayOptions() {
+  return ["口座", ...PAY_METHODS.filter((m) => m.type === "credit").map((m) => m.key)];
+}
+
+// 状態バッジと合計だけを塗り直す。金額・引落日を打っている最中に
+// リスト全体を作り直すとフォーカスが飛ぶので、変わる所だけ触る。
+function kbRefreshFixedStatus() {
+  const today = kbToday();
+  const split = kbFixedMonthSplit(today);
+
+  document.querySelector("#kbFixedSummary").innerHTML = `
+    <span>今月の固定費 <strong>${yen(split.total)}</strong></span>
+    <span>引落済み <strong>${yen(split.done)}</strong></span>
+    <span>これから <strong>${yen(split.upcoming)}</strong></span>${
+    split.card ? `<span>カード払い <strong>${yen(split.card)}</strong></span>` : ""
+  }`;
+
+  for (const el of document.querySelectorAll("[data-fixed-state]")) {
+    const item = kb.config.fixed[Number(el.dataset.fixedState)];
+    if (!item) continue;
+    const status = kbFixedStatus(item, today);
+    el.textContent = status.label;
+    el.className = `kb-fixed-state ${status.kind}`;
+  }
+}
+
+function kbRenderFixed() {
+  const today = kbToday();
+  const payOptions = kbPayOptions();
   const cardPaid = kb.config.fixed.filter((item) => (item.pay || "口座") !== "口座");
 
   document.querySelector("#kbFixedList").innerHTML = kb.config.fixed
-    .map(
-      (item, index) => `
-      <div class="kb-fixed-row${item.from && item.from > now ? " future" : ""}">
-        <div class="kb-fixed-name">${escapeHtml(item.name)}${
-        item.from ? `<em class="kb-flag">${escapeHtml(item.from)}〜</em>` : ""
-      }</div>
+    .map((item, index) => {
+      const status = kbFixedStatus(item, today);
+      return `
+      <div class="kb-fixed-row${status.kind === "off" ? " future" : ""}">
+        <div class="kb-fixed-head">
+          <div class="kb-fixed-name">${escapeHtml(item.name)}
+            <em class="kb-fixed-state ${status.kind}" data-fixed-state="${index}">${escapeHtml(
+        status.label
+      )}</em>
+          </div>
+          <div class="kb-fixed-actions">
+            <button type="button" class="kb-fixed-link" data-fixed-period="${index}">期間</button>
+            <button type="button" class="kb-fixed-remove" data-fixed-delete="${index}">削除</button>
+          </div>
+        </div>
         <div class="kb-fixed-fields">
           <label>¥<input type="number" inputmode="numeric" data-fixed-amount="${index}" value="${Number(
         item.amount
@@ -2063,27 +2500,147 @@ function kbRenderFuture() {
           (option) =>
             `<option value="${escapeHtml(option)}"${
               (item.pay || "口座") === option ? " selected" : ""
-            }>${escapeHtml(option === "口座" ? "口座" : option)}</option>`
+            }>${escapeHtml(option)}</option>`
         )
         .join("")}</select></label>
         </div>
-      </div>`
-    )
+        <div class="kb-fixed-period" data-period="${index}"${
+        item.from || item.to ? "" : " hidden"
+      }>
+          <label>開始<input type="month" data-fixed-from="${index}" value="${escapeHtml(
+        item.from || ""
+      )}"></label>
+          <label>終了<input type="month" data-fixed-to="${index}" value="${escapeHtml(
+        item.to || ""
+      )}"></label>
+          <small>空欄＝ずっと</small>
+        </div>
+        <div class="kb-fixed-confirm" data-confirm="${index}" hidden></div>
+      </div>`;
+    })
     .join("");
 
-  document.querySelector("#kbFixedNote").innerHTML = cardPaid.length
-    ? `カード払いにした固定費（${cardPaid
-        .map((item) => escapeHtml(item.name))
-        .join("・")}）は、<strong>「今月これからの固定費」には数えません</strong>。カードの請求額の中に既に入っているので、数えると同じお金を二重に引くことになります。`
-    : `引落日は仮置き。実際の日に直すと「使えるお金」が正確になります。<strong>カードで払っているものは支払い元をカードに変えてください</strong>（二重計上を防ぎます）。`;
+  document.querySelector("#kbFixedNote").innerHTML = `${
+    cardPaid.length
+      ? `カード払いにした固定費（${cardPaid
+          .map((item) => escapeHtml(item.name))
+          .join(
+            "・"
+          )}）は、<strong>「今月これからの固定費」には数えません</strong>。カードの請求額の中に既に入っているので、数えると同じお金を二重に引くことになります。`
+      : `引落日は仮置き。実際の日に直すと「使えるお金」が正確になります。<strong>カードで払っているものは支払い元をカードに変えてください</strong>（二重計上を防ぎます）。`
+  }<br>ここに載っているものは<strong>変動費として記録しないでください</strong>（同じお金を二重に数えます）。`;
+
+  kbRefreshFixedStatus();
+}
+
+/* ---------- 固定費の編集（過去を壊さない） ---------- */
+
+// 「今月から変わった」＝古い行を先月で終わらせ、新しい額の行を今月から始める。
+// 上書きしてしまうと過去の月の貯金額まで遡って変わり、実測が実測でなくなる。
+function kbSplitFixed(index, nextAmount) {
+  const now = kbMonthKey(kbToday());
+  const item = kb.config.fixed[index];
+  // まだ始まっていない／もう終わっている行は、分けても意味がないので素直に上書き
+  if ((item.from && item.from >= now) || (item.to && item.to < now)) {
+    item.amount = nextAmount;
+    return;
+  }
+  kb.config.fixed.splice(
+    index,
+    1,
+    { ...item, to: kbAddMonths(now, -1) },
+    { ...item, amount: nextAmount, from: now }
+  );
+}
+
+function kbConfirmBar(index) {
+  return document.querySelector(`[data-confirm="${index}"]`);
+}
+
+function kbCloseConfirm(index) {
+  const bar = kbConfirmBar(index);
+  if (!bar) return;
+  bar.hidden = true;
+  bar.innerHTML = "";
+  delete kb.pendingFixed[index];
+}
+
+function kbShowAmountConfirm(index, nextAmount) {
+  const item = kb.config.fixed[index];
+  const now = kbMonthKey(kbToday());
+  const bar = kbConfirmBar(index);
+  if (!bar) return;
+  bar.hidden = false;
+  bar.innerHTML = `
+    <p>${escapeHtml(item.name)}　${yen(item.amount)} → <strong>${yen(
+    nextAmount
+  )}</strong>　どちらですか？</p>
+    <div class="kb-confirm-buttons">
+      <button type="button" data-fixed-correct="${index}">金額が間違っていた（過去も直す）</button>
+      <button type="button" data-fixed-split="${index}">${now} から変わる（過去は残す）</button>
+      <button type="button" class="ghost" data-fixed-cancel="${index}">やめる</button>
+    </div>`;
+}
+
+function kbShowDeleteConfirm(index) {
+  const item = kb.config.fixed[index];
+  const now = kbMonthKey(kbToday());
+  const bar = kbConfirmBar(index);
+  if (!bar) return;
+  bar.hidden = false;
+  bar.innerHTML = `
+    <p>${escapeHtml(item.name)} を消します。どちらですか？</p>
+    <div class="kb-confirm-buttons">
+      <button type="button" data-fixed-end="${index}">${now} で終わり（過去の計算は残す）</button>
+      <button type="button" class="danger" data-fixed-purge="${index}">完全に削除（そもそも間違いだった）</button>
+      <button type="button" class="ghost" data-fixed-cancel="${index}">やめる</button>
+    </div>`;
+}
+
+function kbAddFixed() {
+  const nameEl = document.querySelector("#kbFixedNewName");
+  const amountEl = document.querySelector("#kbFixedNewAmount");
+  const dayEl = document.querySelector("#kbFixedNewDay");
+  const hint = document.querySelector("#kbFixedAddHint");
+
+  const name = nameEl.value.trim();
+  const amount = Number(amountEl.value);
+  if (!name) {
+    hint.textContent = "項目名を入れてください。";
+    nameEl.focus();
+    return;
+  }
+  if (!amount || amount <= 0) {
+    hint.textContent = "金額を入れてください。";
+    amountEl.focus();
+    return;
+  }
+
+  const now = kbMonthKey(kbToday());
+  kb.config.fixed.push({
+    name,
+    amount,
+    day: Number(dayEl.value) || 27,
+    pay: document.querySelector("#kbFixedNewPay").value || "口座",
+    from: now // 過去の月には乗せない。遡って足したいときは開始月を直す
+  });
+  kbSaveConfig();
+
+  nameEl.value = "";
+  amountEl.value = "";
+  dayEl.value = "";
+  kbRenderAll();
+  hint.textContent = `${name} を ${now} から追加しました。過去の月の計算は変わりません。`;
 }
 
 function kbRenderAll() {
+  kb.pendingFixed = {};
   kbRenderInput();
   kbRenderToday();
   kbRenderMonth();
   kbRenderBalance();
   kbRenderFuture();
+  kbRenderFixed();
   if (typeof updateOutput === "function") updateOutput();
 }
 
@@ -2100,13 +2657,21 @@ function kbAddExpense() {
     return;
   }
 
+  const note = document.querySelector("#kbNote").value.trim();
+  if (kb.draft.cat === "その他" && !note) {
+    document.querySelector("#kbHint").textContent =
+      "「その他」は何に使ったかを書いてください。書かないと月末に見返せません。";
+    document.querySelector("#kbNote").focus();
+    return;
+  }
+
   const list = kb.expenses[kb.date] || [];
   list.push({
     amount,
     cat: kb.draft.cat,
     pay: kb.draft.pay,
     unplanned: kb.draft.unplanned,
-    note: document.querySelector("#kbNote").value.trim()
+    note
   });
   kb.expenses[kb.date] = list;
   kbSaveExpenses();
@@ -2218,22 +2783,101 @@ function kbBoot() {
     const el = event.target;
     const amountIndex = el.dataset.fixedAmount;
     const dayIndex = el.dataset.fixedDay;
-    if (amountIndex !== undefined) kb.config.fixed[Number(amountIndex)].amount = Number(el.value) || 0;
-    else if (dayIndex !== undefined) kb.config.fixed[Number(dayIndex)].day = Number(el.value) || 27;
-    else return;
-    kbSaveConfig();
-    kbRenderMonth();
+
+    // 金額はここで確定させない。過去も直すのか今月からなのかを選んでもらう
+    if (amountIndex !== undefined) {
+      const index = Number(amountIndex);
+      const next = Number(el.value) || 0;
+      if (next === Number(kb.config.fixed[index].amount)) {
+        kbCloseConfirm(index);
+        return;
+      }
+      kb.pendingFixed[index] = next;
+      kbShowAmountConfirm(index, next);
+      return;
+    }
+
+    // 引落日は過去の集計に使われない（今月いくら残っているかにしか効かない）ので即確定
+    if (dayIndex !== undefined) {
+      kb.config.fixed[Number(dayIndex)].day = Number(el.value) || 27;
+      kbSaveConfig();
+      kbRenderMonth();
+      kbRefreshFixedStatus();
+    }
   });
 
-  // 支払い元の変更（selectはchangeで拾う。再描画するとフォーカスが飛ぶので入力欄とは分ける）
+  // 支払い元・有効期間（selectとmonthはchangeで拾う。入力中の再描画を避けるため分ける）
   fixedList.addEventListener("change", (event) => {
-    const index = event.target.dataset.fixedPay;
-    if (index === undefined) return;
-    kb.config.fixed[Number(index)].pay = event.target.value;
+    const el = event.target;
+    const payIndex = el.dataset.fixedPay;
+    const fromIndex = el.dataset.fixedFrom;
+    const toIndex = el.dataset.fixedTo;
+
+    if (payIndex !== undefined) kb.config.fixed[Number(payIndex)].pay = el.value;
+    else if (fromIndex !== undefined) {
+      const item = kb.config.fixed[Number(fromIndex)];
+      if (el.value) item.from = el.value;
+      else delete item.from;
+    } else if (toIndex !== undefined) {
+      const item = kb.config.fixed[Number(toIndex)];
+      if (el.value) item.to = el.value;
+      else delete item.to;
+    } else return;
+
     kbSaveConfig();
-    kbRenderMonth();
-    kbRenderFuture();
+    kbRenderAll();
   });
+
+  // 削除と、金額変更の2択
+  fixedList.addEventListener("click", (event) => {
+    const el = event.target.closest("button");
+    if (!el) return;
+    const d = el.dataset;
+    const index = Number(
+      d.fixedPeriod ??
+        d.fixedDelete ??
+        d.fixedCorrect ??
+        d.fixedSplit ??
+        d.fixedCancel ??
+        d.fixedEnd ??
+        d.fixedPurge
+    );
+    if (Number.isNaN(index)) return;
+
+    if (d.fixedPeriod !== undefined) {
+      const period = document.querySelector(`[data-period="${index}"]`);
+      if (period) period.hidden = !period.hidden;
+      return;
+    }
+    if (d.fixedDelete !== undefined) {
+      kbShowDeleteConfirm(index);
+      return;
+    }
+    if (d.fixedCancel !== undefined) {
+      kbCloseConfirm(index);
+      kbRenderFixed(); // 入力欄を元の値に戻す
+      return;
+    }
+
+    if (d.fixedCorrect !== undefined) {
+      kb.config.fixed[index].amount = kb.pendingFixed[index] ?? kb.config.fixed[index].amount;
+    } else if (d.fixedSplit !== undefined) {
+      kbSplitFixed(index, kb.pendingFixed[index] ?? kb.config.fixed[index].amount);
+    } else if (d.fixedEnd !== undefined) {
+      kb.config.fixed[index].to = kbMonthKey(kbToday());
+    } else if (d.fixedPurge !== undefined) {
+      kb.config.fixed.splice(index, 1);
+    } else return;
+
+    kbSaveConfig();
+    kbRenderAll();
+  });
+
+  // 固定費の追加
+  document.querySelector("#kbFixedNewPay").innerHTML = kbPayOptions()
+    .map((option) => `<option value="${escapeHtml(option)}">${escapeHtml(option)}</option>`)
+    .join("");
+  document.querySelector("#kbFixedAdd").addEventListener("click", kbAddFixed);
 
   // 収入
   document.querySelector("#kbIncomeRow").addEventListener("input", (event) => {
@@ -2987,6 +3631,9 @@ function setupTabs() {
   bar.addEventListener("click", (event) => {
     const tab = event.target.dataset.tab;
     if (!tab) return;
+    // タップで付いたフォーカスを外す。CSS側でも枠は消しているが、
+    // 合成レイヤー（sticky + backdrop-filter）に枠が焼き付くのを確実に防ぐ（2026-08-02）
+    event.target.blur();
     bar.querySelectorAll("button").forEach((button) => {
       button.classList.toggle("active", button.dataset.tab === tab);
     });
