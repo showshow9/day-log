@@ -1344,6 +1344,45 @@ textarea {
     <style>
 /* 見返しタブ（2026-08-13）。色・角丸・影は timeline.css の変数をそのまま使う */
 
+/* ===== 固定費リストを折りたたみに（2026-08-13） =====
+   16行ぶんの入力欄が全部開いていて画面4個分あり、翔大が知りたい額まで辿り着けなかった。
+   既定は「名前・状態・金額」の一覧、タップした行だけ開く。 */
+
+.kb-fixed-row > summary {
+  list-style: none;
+  cursor: pointer;
+  margin-bottom: 0;
+  padding: 4px 0;
+}
+
+.kb-fixed-row > summary::-webkit-details-marker {
+  display: none;
+}
+
+.kb-fixed-amount {
+  flex: 0 0 auto;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.kb-fixed-row > summary::after {
+  content: "＋";
+  flex: 0 0 auto;
+  width: 1.2em;
+  text-align: right;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.kb-fixed-row[open] > summary::after {
+  content: "−";
+}
+
+/* 開いたときだけ操作系を出す。閉じているときは一覧として読めることを優先する */
+.kb-fixed-row > .kb-fixed-actions {
+  margin: 6px 0 4px;
+}
+
 /* カードの二重計上の警告（2026-08-13） */
 .kb-note.warn {
   padding: 8px 10px;
@@ -1653,6 +1692,98 @@ textarea {
 
 .rv-row-val.plus {
   color: var(--green);
+}
+
+/* ---- お金の流れ（2026-08-13 追加）----
+   数字を縦に並べるだけでは「固定費と変動費がどうなってるのか」が読めなかったので、
+   手取りを1本のバーにして幅で比べられるようにした */
+
+.rv-savings {
+  font-size: 26px;
+  font-weight: 750;
+  color: var(--green);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.rv-savings.neg {
+  color: var(--rose);
+}
+
+.rv-flow {
+  display: flex;
+  height: 22px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--soft);
+}
+
+.rv-flow > span {
+  height: 100%;
+}
+
+.rv-flow .fixed {
+  background: var(--blue);
+}
+
+.rv-flow .variable {
+  background: var(--amber);
+}
+
+.rv-flow .left {
+  background: var(--green);
+}
+
+/* 行のラベルとバーの色をつなぐ小さな四角。凡例を別に置くと視線が往復する */
+.rv-key {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 6px;
+  border-radius: 2px;
+  vertical-align: baseline;
+}
+
+.rv-key.fixed {
+  background: var(--blue);
+}
+
+.rv-key.variable {
+  background: var(--amber);
+}
+
+.rv-key.left {
+  background: var(--green);
+}
+
+/* ---- 折りたたみ ---- */
+
+.rv-more {
+  margin-top: 14px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.rv-more > summary {
+  list-style: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+  padding: 4px 0;
+}
+
+.rv-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.rv-more > summary::after {
+  content: " ＋";
+}
+
+.rv-more[open] > summary::after {
+  content: " −";
 }
 
 /* ---- 直近14日 ---- */
@@ -3117,19 +3248,19 @@ function kbRenderFixed() {
   document.querySelector("#kbFixedList").innerHTML = kb.config.fixed
     .map((item, index) => {
       const status = kbFixedStatus(item, today);
+      // 16行ぶんの入力欄を全部開いていると画面4個分になり、見るための画面でなくなる（2026-08-13）。
+      // 既定は「名前・金額・状態」だけの一覧にして、触りたい行をタップしたときだけ開く。
+      // ただし変動する固定費（電気・ガス・水道）は毎月入れるものなので閉じない。
       return `
-      <div class="kb-fixed-row${status.kind === "off" ? " future" : ""}">
-        <div class="kb-fixed-head">
+      <details class="kb-fixed-row${status.kind === "off" ? " future" : ""}"${item.variable ? " open" : ""}>
+        <summary class="kb-fixed-head">
           <div class="kb-fixed-name">${escapeHtml(item.name)}
             <em class="kb-fixed-state ${status.kind}" data-fixed-state="${index}">${escapeHtml(
         status.label
       )}</em>
           </div>
-          <div class="kb-fixed-actions">
-            <button type="button" class="kb-fixed-link" data-fixed-period="${index}">期間</button>
-            <button type="button" class="kb-fixed-remove" data-fixed-delete="${index}">削除</button>
-          </div>
-        </div>
+          <span class="kb-fixed-amount">${yen(kbFixedAmount(item, kbMonthKey(today)))}</span>
+        </summary>
         ${item.variable ? kbVariableRow(item, index, kbMonthKey(today)) : ""}
         <div class="kb-fixed-fields">
           <label>${item.variable ? "見込" : ""}¥<input type="number" inputmode="numeric" data-fixed-amount="${index}" value="${Number(
@@ -3159,7 +3290,11 @@ function kbRenderFixed() {
           <small>空欄＝ずっと</small>
         </div>
         <div class="kb-fixed-confirm" data-confirm="${index}" hidden></div>
-      </div>`;
+        <div class="kb-fixed-actions">
+          <button type="button" class="kb-fixed-link" data-fixed-period="${index}">期間</button>
+          <button type="button" class="kb-fixed-remove" data-fixed-delete="${index}">削除</button>
+        </div>
+      </details>`;
     })
     .join("");
 
@@ -3839,36 +3974,60 @@ function rvRenderMoney(days) {
     .filter((item) => RV_FOOD_CATS.includes(item.cat) && item.unplanned)
     .reduce((sum, item) => sum + rvNum(item.amount), 0);
 
+  // 「固定費と変動費がどうなってるのか分からない」（2026-08-13 本人）への答え＝
+  // 手取りが何にいくら持っていかれて、いくら残るかを1本のバーで見せる。
+  // 数字を並べるだけだと関係が読めないので、必ず幅で比べられる形にする。
+  const split = kbFixedMonthSplit(asOf);
+  const takeHome = save.takeHome || 1;
+  const projected = save.projectedVariable;
+  const leftover = Math.max(0, takeHome - split.total - projected);
+  const seg = (v, cls, label) =>
+    v <= 0 ? "" : `<span class="${cls}" style="width:${(v / takeHome) * 100}%" title="${label} ${rvYen(v)}"></span>`;
+
   const balanceLine = balance === null
-    ? `<p class="rv-note rv-warn">銀行残高がまだ入っていません。家計簿タブで一度入れると「使えるお金」が出ます</p>`
-    : `<div class="rv-row"><span class="rv-row-label">今の残高（推定）</span><span class="rv-row-val">${rvYen(balance)}</span></div>`;
+    ? `<p class="rv-note rv-warn">銀行残高がまだ入っていません。家計簿タブで一度入れると出ます</p>`
+    : `<div class="rv-row"><span class="rv-row-label">今の残高</span><span class="rv-row-val">${rvYen(balance)}</span></div>`;
 
   return `
-    <div class="panel-heading"><div><p class="eyebrow">お金</p><h2>使えるお金</h2></div>
+    <div class="panel-heading"><div><p class="eyebrow">お金</p><h2>今使っていいお金</h2></div>
       <span class="rv-big ${usable === null ? "unknown" : usable < 0 ? "neg" : ""}">${usable === null ? "—" : rvYen(usable)}</span></div>
-    <p class="rv-note rv-fine">残高 ＋ これから入る給料 − 未引落カード − 今月これからの固定費</p>
+    <p class="rv-note rv-fine">今月これからの固定費とカード請求を全部よけた残り。ここから出しても月末に足りなくならない額</p>
 
-    <h3 class="rv-sub">内訳</h3>
-    ${balanceLine}
-    ${incoming ? `<div class="rv-row"><span class="rv-row-label">これから入る給料</span><span class="rv-row-val plus">+${rvYen(incoming)}</span></div>` : ""}
-    <div class="rv-row"><span class="rv-row-label">未引落のカード</span><span class="rv-row-val neg">−${rvYen(cardTotal)}</span></div>
-    <div class="rv-row"><span class="rv-row-label">今月これからの固定費</span><span class="rv-row-val neg">−${rvYen(remainingFixed)}</span></div>
+    <h3 class="rv-sub">今月このあと残る（貯金）</h3>
+    <div class="rv-savings ${save.cash < 0 ? "neg" : ""}">${rvYen(save.cash)}</div>
+    ${save.invest ? `<p class="rv-note rv-fine">別に ${rvYen(save.invest)} がNISAで資産に移ります（消えるお金ではない）</p>` : ""}
 
-    <h3 class="rv-sub">来月に確定しているカード請求</h3>
-    ${cardRows}
+    <h3 class="rv-sub">何にいくら持っていかれるか</h3>
+    <div class="rv-flow">
+      ${seg(split.total, "fixed", "固定費")}
+      ${seg(projected, "variable", "変動費")}
+      ${seg(leftover, "left", "残り")}
+    </div>
+    <div class="rv-row"><span class="rv-row-label">手取り</span><span class="rv-row-val">${rvYen(takeHome)}</span></div>
+    <div class="rv-row"><span class="rv-row-label"><i class="rv-key fixed"></i>固定費</span><span class="rv-row-val neg">−${rvYen(split.total)}</span></div>
+    <div class="rv-row"><span class="rv-row-label"><i class="rv-key variable"></i>変動費</span><span class="rv-row-val neg">−${rvYen(projected)}</span></div>
+    <div class="rv-row"><span class="rv-row-label"><i class="rv-key left"></i>残り</span><span class="rv-row-val ${leftover > 0 ? "plus" : "neg"}">${rvYen(leftover)}</span></div>
+    <p class="rv-note rv-fine">固定費＝毎月決まって出るもの（家賃・光熱費・サブスク）。変動費＝自分で使った分。変動費は今 ${rvYen(save.spent)} 使っていて、このペースなら月末 ${rvYen(projected)} になる見込み</p>
 
-    <h3 class="rv-sub">今月使った額</h3>
-    <div class="rv-row"><span class="rv-row-label">変動費</span><span class="rv-row-val">${rvYen(save.spent)}</span></div>
-    <div class="rv-row"><span class="rv-row-label">月末の見込み</span><span class="rv-row-val">${rvYen(save.projectedVariable)}</span></div>
+    <details class="rv-more">
+      <summary>内訳をみる</summary>
+      ${balanceLine}
+      ${incoming ? `<div class="rv-row"><span class="rv-row-label">これから入る給料</span><span class="rv-row-val plus">+${rvYen(incoming)}</span></div>` : ""}
+      <div class="rv-row"><span class="rv-row-label">未引落のカード</span><span class="rv-row-val neg">−${rvYen(cardTotal)}</span></div>
+      <div class="rv-row"><span class="rv-row-label">今月これからの固定費</span><span class="rv-row-val neg">−${rvYen(remainingFixed)}</span></div>
 
-    <h3 class="rv-sub">食費 ／ 枠 ${rvYen(RV_FOOD_BUDGET)}</h3>
-    ${rvBar(food / RV_FOOD_BUDGET, food > RV_FOOD_BUDGET ? "over" : "")}
-    <p class="rv-note">${rvYen(food)}（うち予定外 <strong>${rvYen(foodUnplanned)}</strong>）／ 残り ${rvYen(Math.max(0, RV_FOOD_BUDGET - food))}</p>
-    <p class="rv-note rv-fine">枠の内訳＝米10,000（月1回）＋買いだめ5,000×4＋外食・おかず5,000。対象＝${RV_FOOD_CATS.join("・")}</p>
+      <h3 class="rv-sub">固定費の中身</h3>
+      <div class="rv-row"><span class="rv-row-label">もう出た</span><span class="rv-row-val">${rvYen(split.done)}</span></div>
+      <div class="rv-row"><span class="rv-row-label">これから出る</span><span class="rv-row-val">${rvYen(split.upcoming)}</span></div>
+      <div class="rv-row"><span class="rv-row-label">カード請求に乗る</span><span class="rv-row-val">${rvYen(split.card)}</span></div>
 
-    <h3 class="rv-sub">今月の貯金見込み</h3>
-    <div class="rv-row"><span class="rv-row-label">現金で残る</span><span class="rv-row-val ${save.cash < 0 ? "neg" : "plus"}">${rvYen(save.cash)}</span></div>
-    ${save.invest ? `<div class="rv-row"><span class="rv-row-label">投資にまわる（NISA）</span><span class="rv-row-val">${rvYen(save.invest)}</span></div>` : ""}
+      <h3 class="rv-sub">カードの請求</h3>
+      ${cardRows}
+
+      <h3 class="rv-sub">食費 ／ 枠 ${rvYen(RV_FOOD_BUDGET)}</h3>
+      ${rvBar(food / RV_FOOD_BUDGET, food > RV_FOOD_BUDGET ? "over" : "")}
+      <p class="rv-note">${rvYen(food)}（うち予定外 <strong>${rvYen(foodUnplanned)}</strong>）／ 残り ${rvYen(Math.max(0, RV_FOOD_BUDGET - food))}</p>
+    </details>
   `;
 }
 
