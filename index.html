@@ -1341,6 +1341,317 @@ textarea {
 }
 
 </style>
+    <style>
+/* 見返しタブ（2026-08-13）。色・角丸・影は timeline.css の変数をそのまま使う */
+
+/* タブが4つになったので、狭い画面で「先の見通し」が2行に折り返さないよう詰める（2026-08-13） */
+@media (max-width: 430px) {
+  .tabbar {
+    gap: 4px;
+  }
+
+  .tabbar button {
+    padding: 10px 4px;
+    font-size: 12.5px;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+  }
+}
+
+.rv-monthnav .panel-heading {
+  align-items: center;
+}
+
+.rv-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.rv-nav h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.rv-nav button {
+  min-width: 44px;
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.rv-sub {
+  margin: 16px 0 8px;
+  font-size: 13px;
+  font-weight: 750;
+  color: var(--muted);
+}
+
+.rv-pct {
+  font-size: 20px;
+  font-weight: 750;
+  color: var(--green);
+}
+
+.rv-big {
+  font-size: 22px;
+  font-weight: 750;
+  color: var(--green);
+  white-space: nowrap;
+}
+
+.rv-big.neg {
+  color: var(--rose);
+}
+
+.rv-big.unknown {
+  color: var(--line);
+}
+
+/* ---- バー ---- */
+
+.rv-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--soft);
+  overflow: hidden;
+}
+
+.rv-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--blue);
+  transition: width 0.25s ease;
+}
+
+.rv-bar > span.good {
+  background: var(--green);
+}
+
+.rv-bar > span.over {
+  background: var(--rose);
+}
+
+.rv-bar > span.zero {
+  background: var(--line);
+}
+
+/* ---- 1行（ラベル｜バー｜値） ---- */
+
+.rv-row {
+  display: grid;
+  grid-template-columns: 5.5em 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--soft);
+}
+
+.rv-row:last-child {
+  border-bottom: 0;
+}
+
+.rv-row:has(> .rv-row-label + .rv-row-val) {
+  grid-template-columns: 1fr auto;
+}
+
+.rv-row-label {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.rv-row-val {
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.rv-row-val.zero {
+  color: var(--line);
+}
+
+.rv-row-val.neg {
+  color: var(--rose);
+}
+
+.rv-row-val.plus {
+  color: var(--green);
+}
+
+/* ---- 直近14日 ---- */
+
+.rv-chips {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.rv-chip {
+  display: flex;
+  flex: 1 0 18px;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 18px;
+}
+
+.rv-chip-bar {
+  width: 100%;
+  border-radius: 3px;
+  background: var(--line);
+}
+
+.rv-chip-bar.g {
+  background: var(--green);
+}
+
+.rv-chip-bar.y {
+  background: var(--amber);
+}
+
+.rv-chip-bar.r {
+  background: var(--rose);
+}
+
+/* 未記入（当日を含む）。0分と区別する */
+.rv-chip-bar.none {
+  background: var(--soft);
+}
+
+.rv-chip-day {
+  font-size: 10px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- 習慣 ---- */
+
+.rv-habit {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--soft);
+}
+
+.rv-habit:last-of-type {
+  border-bottom: 0;
+}
+
+.rv-habit-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.rv-habit-label {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.rv-habit-count strong {
+  font-size: 18px;
+  color: var(--green);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 1か月ぶんを必ず1行に収める。列数は月の日数からJS側で指定する（2行に折り返すと
+   「1日目がどこか」が読めなくなり、月の中の位置が分からなくなるため） */
+.rv-cells {
+  display: grid;
+  gap: 2px;
+}
+
+.rv-cell {
+  aspect-ratio: 1;
+  border-radius: 2px;
+  background: var(--soft);
+}
+
+.rv-cell.on {
+  background: var(--green);
+}
+
+/* 未達は赤にしない。記録が無い日と見分けられればよく、責める色にする必要がない */
+.rv-cell.off {
+  background: var(--line);
+}
+
+.rv-cell.none,
+.rv-cell.future {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--soft);
+}
+
+/* ---- 注記 ---- */
+
+.rv-note {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.rv-note.rv-fine {
+  font-size: 11px;
+}
+
+.rv-note.rv-good {
+  color: var(--green);
+}
+
+.rv-note.rv-warn {
+  color: var(--rose);
+}
+
+/* ---- 取り込み ---- */
+
+.rv-import textarea {
+  width: 100%;
+  min-height: 76px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 12px;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.rv-import-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.rv-import-actions button,
+.rv-import-actions label {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+}
+
+.rv-import-actions input[type="file"] {
+  display: none;
+}
+
+</style>
   </head>
   <body>
     <header class="topbar">
@@ -1355,6 +1666,7 @@ textarea {
       <button type="button" class="active" data-tab="log">記録</button>
       <button type="button" data-tab="money">家計簿</button>
       <button type="button" data-tab="future">先の見通し</button>
+      <button type="button" data-tab="review">見返し</button>
     </nav>
 
     <!-- ============ 記録タブ ============ -->
@@ -1628,6 +1940,41 @@ textarea {
         <p class="kb-note" id="kbFixedAddHint">追加した項目は<strong>今月から</strong>効きます。過去の月の計算は変わりません。</p>
 
         <p class="kb-note" id="kbFixedNote"></p>
+      </section>
+    </main>
+
+    <!-- ============ 見返しタブ ============ -->
+    <main class="layout tab-panel" id="tab-review" hidden>
+      <section class="panel rv-monthnav">
+        <div class="rv-nav">
+          <button type="button" id="rvPrev" aria-label="前の月">‹</button>
+          <h2 id="rvMonth">—</h2>
+          <button type="button" id="rvNext" aria-label="次の月">›</button>
+        </div>
+      </section>
+
+      <section class="panel" id="rvMusic"></section>
+      <section class="panel" id="rvHabit"></section>
+      <section class="panel" id="rvMoney"></section>
+
+      <section class="panel rv-import">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">過去データ</p>
+            <h2>取り込み</h2>
+          </div>
+          <span class="rv-note rv-fine" id="rvDataCount"></span>
+        </div>
+        <p class="rv-note">
+          このアプリを使う前の記録（6月・7月）は、書き出したファイルを一度だけ読み込むと見返しに出ます。
+          <strong>1回やれば以降は不要</strong>です。
+        </p>
+        <textarea id="rvImportText" placeholder="JSONを貼り付け" spellcheck="false"></textarea>
+        <div class="rv-import-actions">
+          <button type="button" id="rvImportRun">貼り付けから読み込む</button>
+          <label for="rvImportFile">ファイルを選ぶ<input id="rvImportFile" type="file" accept=".json,application/json"></label>
+        </div>
+        <p class="rv-note" id="rvImportStatus"></p>
       </section>
     </main>
 
@@ -2894,6 +3241,414 @@ function kbBoot() {
 
 </script>
     <script>
+/* ============================================================
+   見返しタブ（2026-08-13 新設）
+
+   目的は「入力したものを見せる」ことではなく、翔大が3つの判断をできるようにすること。
+     ① 音楽：今月の目標に間に合うか（＝残りペース）
+     ② 習慣：6時起き・23時前就寝・作曲が今月どれだけ立っているか
+     ③ お金：今この買い物をしていいか（＝使えるお金）
+
+   ⚠️ 連続日数（ストリーク）は意図的に使っていない。
+   1日切れるとゼロに戻る表示は翔大の「0か100か思考」を直撃するため、
+   毎日最低1分ルールと同じ「今月◯日できた」を数える形に揃えている。
+
+   データは全部この端末の中（localStorage）にある。サーバーもNotionも使わない。
+     dailyLog.fields  … 入力アプリが日付ごとに保存している日次ログ
+     dailyLog.history … 過去分（6〜7月）を1回だけ取り込んだもの。fieldsが優先
+     kakeibo.*        … 家計簿（kakeibo.js の関数をそのまま使う）
+   ============================================================ */
+
+const RV_HISTORY_KEY = "dailyLog.history";
+const RV_MUSIC_KEYS = ["作曲", "アコギ", "エレキ", "ピアノ", "歌ボーカル"];
+const RV_MUSIC_LABEL = { 作曲: "作曲", アコギ: "アコギ", エレキ: "エレキ", ピアノ: "ピアノ", 歌ボーカル: "ボーカル" };
+const RV_MONTH_GOAL = 6000; // 月100時間
+const RV_GOAL_WEEKDAY = 150;
+const RV_GOAL_WEEKEND = 390;
+
+// 食費の枠＝米10,000（月1回まとめ買い）＋週の買いだめ5,000×4＋外食・おかず5,000
+const RV_FOOD_BUDGET = 35000;
+const RV_FOOD_CATS = ["食料品", "外食", "カフェ", "お菓子・ジュース"];
+
+const rv = { ym: "" };
+
+/* ---------- データ読み ---------- */
+
+function rvReadJson(key) {
+  try {
+    return JSON.parse(localStorage.getItem(key) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+// 日付 → 記録。入力アプリの実データを正とし、足りない日だけ取り込んだ履歴で埋める
+function rvAllDays() {
+  const merged = { ...rvReadJson(RV_HISTORY_KEY) };
+  const live = rvReadJson("dailyLog.fields");
+  for (const [date, rec] of Object.entries(live)) {
+    merged[date] = { ...(merged[date] || {}), ...rec };
+  }
+  return merged;
+}
+
+function rvNum(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function rvMusicMinutes(rec) {
+  return RV_MUSIC_KEYS.reduce((sum, key) => sum + rvNum(rec[key]), 0);
+}
+
+function rvToday() {
+  const now = new Date();
+  const p = (n) => String(n).padStart(2, "0");
+  return `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}`;
+}
+
+function rvDaysIn(ym) {
+  const [y, m] = ym.split("-").map(Number);
+  return new Date(y, m, 0).getDate();
+}
+
+function rvDatesOf(ym) {
+  const out = [];
+  for (let d = 1; d <= rvDaysIn(ym); d += 1) out.push(`${ym}-${String(d).padStart(2, "0")}`);
+  return out;
+}
+
+function rvIsWeekend(date) {
+  const day = new Date(`${date}T00:00:00`).getDay();
+  return day === 0 || day === 6;
+}
+
+// その日の音楽の目標。祝日・有給は判定できないので平日扱いになる（画面にもそう書いてある）
+function rvDayGoal(date) {
+  return rvIsWeekend(date) ? RV_GOAL_WEEKEND : RV_GOAL_WEEKDAY;
+}
+
+function rvYen(n) {
+  return `¥${Math.round(n).toLocaleString("ja-JP")}`;
+}
+
+function rvHours(min) {
+  return `${Math.floor(min / 60)}時間${min % 60 ? `${min % 60}分` : ""}`;
+}
+
+function rvBar(ratio, cls) {
+  const pct = Math.max(0, Math.min(100, ratio * 100));
+  return `<div class="rv-bar"><span class="${cls || ""}" style="width:${pct.toFixed(1)}%"></span></div>`;
+}
+
+function rvEsc(v) {
+  return String(v).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+}
+
+/* ---------- ① 音楽 ---------- */
+
+function rvRenderMusic(days) {
+  const dates = rvDatesOf(rv.ym);
+  const today = rvToday();
+  const isCurrent = rv.ym === today.slice(0, 7);
+  const upto = isCurrent ? dates.filter((d) => d <= today) : dates;
+
+  let total = 0;
+  const perInstrument = Object.fromEntries(RV_MUSIC_KEYS.map((k) => [k, 0]));
+  for (const date of upto) {
+    const rec = days[date] || {};
+    total += rvMusicMinutes(rec);
+    for (const key of RV_MUSIC_KEYS) perInstrument[key] += rvNum(rec[key]);
+  }
+
+  const left = Math.max(0, RV_MONTH_GOAL - total);
+  const daysLeft = isCurrent ? rvDaysIn(rv.ym) - Number(today.slice(8, 10)) : 0;
+  const pace = daysLeft > 0 ? Math.ceil(left / daysLeft) : 0;
+
+  // 残りペースが「毎日どのくらいか」を、平日/週末の基準と比べられる形で出す
+  let paceLine = "";
+  if (!isCurrent) {
+    paceLine = `<p class="rv-note">${total >= RV_MONTH_GOAL ? "月100時間を達成した月" : `目標まで ${rvHours(left)}届かなかった月`}</p>`;
+  } else if (left === 0) {
+    paceLine = `<p class="rv-note rv-good">今月の6,000分に到達済み。ここから先は上乗せ</p>`;
+  } else if (daysLeft === 0) {
+    paceLine = `<p class="rv-note">今日が最終日。残り ${rvHours(left)}</p>`;
+  } else {
+    paceLine = `<p class="rv-note">残り<strong>${daysLeft}日</strong>で ${rvHours(left)}＝<strong>1日 ${pace}分</strong>ペース</p>`;
+  }
+
+  const maxInst = Math.max(1, ...Object.values(perInstrument));
+  const instRows = RV_MUSIC_KEYS.map((key) => {
+    const v = perInstrument[key];
+    return `<div class="rv-row">
+        <span class="rv-row-label">${RV_MUSIC_LABEL[key]}</span>
+        ${rvBar(v / maxInst, v === 0 ? "zero" : "")}
+        <span class="rv-row-val${v === 0 ? " zero" : ""}">${v ? `${v.toLocaleString()}分` : "0"}</span>
+      </div>`;
+  }).join("");
+
+  // 直近14日は「達成率の色」だけ見せる。数字を並べると採点表になるので出さない
+  const recent = (isCurrent ? upto : dates).slice(-14);
+  const chips = recent.map((date) => {
+    // まだ記録していない日（今日を含む）は色を付けない。
+    // 0分と「未記入」を同じ赤で出すと、日記を書く前の当日が毎回🔴に見えてしまう
+    const rec = days[date];
+    const min = rec ? rvMusicMinutes(rec) : 0;
+    const ratio = min / rvDayGoal(date);
+    const tone = !rec ? "none" : ratio >= 1 ? "g" : ratio >= 0.5 ? "y" : "r";
+    const h = rec ? Math.max(6, Math.min(46, Math.round((min / 420) * 46))) : 6;
+    return `<div class="rv-chip" title="${date} ${rec ? `${min}分` : "未記入"}">
+        <span class="rv-chip-bar ${tone}" style="height:${h}px"></span>
+        <span class="rv-chip-day">${Number(date.slice(8, 10))}</span>
+      </div>`;
+  }).join("");
+
+  return `
+    <div class="panel-heading"><div><p class="eyebrow">音楽</p><h2>${total.toLocaleString()} / 6,000分</h2></div>
+      <span class="rv-pct">${Math.round((total / RV_MONTH_GOAL) * 100)}%</span></div>
+    ${rvBar(total / RV_MONTH_GOAL, total >= RV_MONTH_GOAL ? "good" : "")}
+    ${paceLine}
+    <h3 class="rv-sub">楽器ごとの総練習量</h3>
+    ${instRows}
+    <h3 class="rv-sub">直近14日</h3>
+    <div class="rv-chips">${chips}</div>
+    <p class="rv-note rv-fine">緑＝その日の目標達成／黄＝半分以上／赤＝半分未満。平日150分・土日390分で判定（祝日・有給は平日扱い）</p>
+  `;
+}
+
+/* ---------- ② 習慣 ---------- */
+
+// 就寝時刻の判定。00:19 のような日付またぎは「23時前に寝られていない」側に入れる。
+// 夕方〜22:59 に記録されているときだけ達成とする。
+function rvSleptEarly(value) {
+  if (!value) return null;
+  const [h] = String(value).split(":").map(Number);
+  if (!Number.isFinite(h)) return null;
+  return h >= 12 && h < 23;
+}
+
+function rvWokeEarly(value) {
+  if (!value) return null;
+  const [h, m] = String(value).split(":").map(Number);
+  if (!Number.isFinite(h)) return null;
+  return h * 60 + (m || 0) <= 6 * 60;
+}
+
+function rvRenderHabit(days) {
+  const dates = rvDatesOf(rv.ym);
+  const today = rvToday();
+  const isCurrent = rv.ym === today.slice(0, 7);
+  const upto = isCurrent ? dates.filter((d) => d <= today) : dates;
+
+  const habits = [
+    { key: "wake", label: "6時までに起きる", test: (r) => rvWokeEarly(r.wakeTime) },
+    { key: "sleep", label: "23時前に寝る", test: (r) => rvSleptEarly(r.sleepTime) },
+    { key: "compose", label: "作曲にさわる", test: (r) => (r.作曲 === undefined ? null : rvNum(r.作曲) > 0) }
+  ];
+
+  const blocks = habits.map((habit) => {
+    let done = 0;
+    let known = 0;
+    const cells = dates.map((date) => {
+      const rec = days[date];
+      const future = isCurrent && date > today;
+      const result = rec ? habit.test(rec) : null;
+      if (!future && result !== null) {
+        known += 1;
+        if (result) done += 1;
+      }
+      const cls = future ? "future" : result === true ? "on" : result === false ? "off" : "none";
+      return `<span class="rv-cell ${cls}" title="${date}"></span>`;
+    }).join("");
+
+    return `<div class="rv-habit">
+        <div class="rv-habit-head">
+          <span class="rv-habit-label">${habit.label}</span>
+          <span class="rv-habit-count"><strong>${done}</strong>日 <span class="rv-fine">/ 記録${known}日</span></span>
+        </div>
+        <div class="rv-cells" style="grid-template-columns:repeat(${dates.length},1fr)">${cells}</div>
+      </div>`;
+  }).join("");
+
+  // 平均の起床・就寝は「何日できたか」と別の情報なので添える（責める材料ではなく現在地）
+  const wakes = upto.map((d) => (days[d] || {}).wakeTime).filter(Boolean);
+  const avgWake = wakes.length
+    ? (() => {
+        const total = wakes.reduce((sum, v) => {
+          const [h, m] = v.split(":").map(Number);
+          return sum + h * 60 + m;
+        }, 0);
+        const avg = Math.round(total / wakes.length);
+        return `${String(Math.floor(avg / 60)).padStart(2, "0")}:${String(avg % 60).padStart(2, "0")}`;
+      })()
+    : "—";
+
+  return `
+    <div class="panel-heading"><div><p class="eyebrow">習慣</p><h2>今月できた日</h2></div></div>
+    ${blocks}
+    <p class="rv-note rv-fine">平均の起床は <strong>${avgWake}</strong>。連続日数は出していません（1日で0に戻る数え方をしないため）</p>
+  `;
+}
+
+/* ---------- ③ お金 ---------- */
+
+function rvRenderMoney(days) {
+  if (typeof kbSavings !== "function") {
+    return `<div class="panel-heading"><div><p class="eyebrow">お金</p><h2>—</h2></div></div>
+      <p class="rv-note">家計簿タブを一度開くと表示されます</p>`;
+  }
+
+  const today = rvToday();
+  const isCurrent = rv.ym === today.slice(0, 7);
+  const asOf = isCurrent ? today : `${rv.ym}-${String(rvDaysIn(rv.ym)).padStart(2, "0")}`;
+
+  const save = kbSavings(asOf);
+  const balance = kbEstimatedBalance();
+  const outstanding = kbCardOutstanding(asOf);
+  const cardTotal = [...outstanding.values()].reduce((sum, row) => sum + row.total, 0);
+  const remainingFixed = kbRemainingFixed(asOf);
+  const incoming = kbIncomingPay(asOf);
+
+  // 「結局いくら使えるか」＝ 今の残高 ＋ これから入る給料 − 未引落カード − 今月これからの固定費
+  // ⚠️ 残高が未入力のときに 0 として計算すると、実際より低い額を自信ありげに出してしまう。
+  // この画面は「今買っていいか」を判断するためのものなので、根拠が欠けているときは数字を出さない。
+  const usable = balance === null ? null : balance + incoming - cardTotal - remainingFixed;
+
+  const cardRows = [...outstanding.entries()]
+    .filter(([, row]) => row.total > 0)
+    .map(([name, row]) => `<div class="rv-row">
+        <span class="rv-row-label">${rvEsc(name)}</span>
+        <span class="rv-row-val">${rvYen(row.total)}</span>
+      </div>`).join("") || `<p class="rv-note rv-fine">未引落のカード請求はありません</p>`;
+
+  const cats = kbCategoryTotals(rv.ym);
+  const food = RV_FOOD_CATS.reduce((sum, key) => sum + (cats.get(key) || 0), 0);
+  const foodUnplanned = kbExpensesInMonth(rv.ym)
+    .filter((item) => RV_FOOD_CATS.includes(item.cat) && item.unplanned)
+    .reduce((sum, item) => sum + rvNum(item.amount), 0);
+
+  const balanceLine = balance === null
+    ? `<p class="rv-note rv-warn">銀行残高がまだ入っていません。家計簿タブで一度入れると「使えるお金」が出ます</p>`
+    : `<div class="rv-row"><span class="rv-row-label">今の残高（推定）</span><span class="rv-row-val">${rvYen(balance)}</span></div>`;
+
+  return `
+    <div class="panel-heading"><div><p class="eyebrow">お金</p><h2>使えるお金</h2></div>
+      <span class="rv-big ${usable === null ? "unknown" : usable < 0 ? "neg" : ""}">${usable === null ? "—" : rvYen(usable)}</span></div>
+    <p class="rv-note rv-fine">残高 ＋ これから入る給料 − 未引落カード − 今月これからの固定費</p>
+
+    <h3 class="rv-sub">内訳</h3>
+    ${balanceLine}
+    ${incoming ? `<div class="rv-row"><span class="rv-row-label">これから入る給料</span><span class="rv-row-val plus">+${rvYen(incoming)}</span></div>` : ""}
+    <div class="rv-row"><span class="rv-row-label">未引落のカード</span><span class="rv-row-val neg">−${rvYen(cardTotal)}</span></div>
+    <div class="rv-row"><span class="rv-row-label">今月これからの固定費</span><span class="rv-row-val neg">−${rvYen(remainingFixed)}</span></div>
+
+    <h3 class="rv-sub">来月に確定しているカード請求</h3>
+    ${cardRows}
+
+    <h3 class="rv-sub">今月使った額</h3>
+    <div class="rv-row"><span class="rv-row-label">変動費</span><span class="rv-row-val">${rvYen(save.spent)}</span></div>
+    <div class="rv-row"><span class="rv-row-label">月末の見込み</span><span class="rv-row-val">${rvYen(save.projectedVariable)}</span></div>
+
+    <h3 class="rv-sub">食費 ／ 枠 ${rvYen(RV_FOOD_BUDGET)}</h3>
+    ${rvBar(food / RV_FOOD_BUDGET, food > RV_FOOD_BUDGET ? "over" : "")}
+    <p class="rv-note">${rvYen(food)}（うち予定外 <strong>${rvYen(foodUnplanned)}</strong>）／ 残り ${rvYen(Math.max(0, RV_FOOD_BUDGET - food))}</p>
+    <p class="rv-note rv-fine">枠の内訳＝米10,000（月1回）＋買いだめ5,000×4＋外食・おかず5,000。対象＝${RV_FOOD_CATS.join("・")}</p>
+
+    <h3 class="rv-sub">今月の貯金見込み</h3>
+    <div class="rv-row"><span class="rv-row-label">現金で残る</span><span class="rv-row-val ${save.cash < 0 ? "neg" : "plus"}">${rvYen(save.cash)}</span></div>
+    ${save.invest ? `<div class="rv-row"><span class="rv-row-label">投資にまわる（NISA）</span><span class="rv-row-val">${rvYen(save.invest)}</span></div>` : ""}
+  `;
+}
+
+/* ---------- 過去データの取り込み ---------- */
+
+function rvImportJson(text) {
+  const parsed = JSON.parse(text);
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("形式が違います");
+  const dates = Object.keys(parsed).filter((k) => /^\d{4}-\d{2}-\d{2}$/.test(k));
+  if (!dates.length) throw new Error("日付のデータが入っていません");
+  const current = rvReadJson(RV_HISTORY_KEY);
+  for (const date of dates) current[date] = parsed[date];
+  localStorage.setItem(RV_HISTORY_KEY, JSON.stringify(current));
+  return dates.length;
+}
+
+function rvBindImport() {
+  const status = document.querySelector("#rvImportStatus");
+  const say = (msg, ok) => {
+    if (!status) return;
+    status.textContent = msg;
+    status.className = `rv-note ${ok ? "rv-good" : "rv-warn"}`;
+  };
+
+  const apply = (text) => {
+    try {
+      const n = rvImportJson(text);
+      say(`${n}日ぶん取り込みました`, true);
+      rvRender();
+    } catch (error) {
+      say(`読み込めませんでした：${error.message}`, false);
+    }
+  };
+
+  document.querySelector("#rvImportFile")?.addEventListener("change", (event) => {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    file.text().then(apply).catch(() => say("ファイルを開けませんでした", false));
+    event.target.value = "";
+  });
+
+  document.querySelector("#rvImportRun")?.addEventListener("click", () => {
+    const box = document.querySelector("#rvImportText");
+    if (!box || !box.value.trim()) return say("貼り付け欄が空です", false);
+    apply(box.value);
+    box.value = "";
+  });
+}
+
+/* ---------- 描画 ---------- */
+
+function rvRender() {
+  if (!rv.ym) rv.ym = rvToday().slice(0, 7);
+  const days = rvAllDays();
+
+  const [y, m] = rv.ym.split("-");
+  const label = document.querySelector("#rvMonth");
+  if (label) label.textContent = `${Number(y)}年${Number(m)}月`;
+
+  const set = (id, html) => {
+    const el = document.querySelector(id);
+    if (el) el.innerHTML = html;
+  };
+  set("#rvMusic", rvRenderMusic(days));
+  set("#rvHabit", rvRenderHabit(days));
+  set("#rvMoney", rvRenderMoney(days));
+
+  const known = Object.keys(days).length;
+  const count = document.querySelector("#rvDataCount");
+  if (count) count.textContent = `取り込み済み ${known}日`;
+}
+
+function rvShiftMonth(step) {
+  const [y, m] = rv.ym.split("-").map(Number);
+  const d = new Date(y, m - 1 + step, 1);
+  rv.ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  rvRender();
+}
+
+// 見返しタブが開かれたときに timeline.js から呼ばれる
+function renderReview() {
+  rvRender();
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelector("#rvPrev")?.addEventListener("click", () => rvShiftMonth(-1));
+  document.querySelector("#rvNext")?.addEventListener("click", () => rvShiftMonth(1));
+  rvBindImport();
+});
+
+</script>
+    <script>
 const state = {
   selectedTemplate: "",
   selectedActivity: "アコギ",
@@ -3624,7 +4379,7 @@ function boot() {
 
 // ===== タブ切り替え =====
 
-const TAB_TITLES = { log: "今日の記録", money: "支出を記録", future: "1年後の見通し" };
+const TAB_TITLES = { log: "今日の記録", money: "支出を記録", future: "1年後の見通し", review: "見返し" };
 
 function setupTabs() {
   const bar = document.querySelector("#tabBar");
@@ -3642,6 +4397,8 @@ function setupTabs() {
     }
     document.querySelector("#appTitle").textContent = TAB_TITLES[tab];
     document.querySelector("#copyButton").hidden = tab !== "log";
+    // 見返しは開いた時点の数字で描く（家計簿の入力・その日の記録を反映させるため）
+    if (tab === "review" && typeof renderReview === "function") renderReview();
     window.scrollTo(0, 0);
   });
 }
