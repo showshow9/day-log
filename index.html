@@ -1344,6 +1344,176 @@ textarea {
     <style>
 /* 見返しタブ（2026-08-13）。色・角丸・影は timeline.css の変数をそのまま使う */
 
+/* カードの二重計上の警告（2026-08-13） */
+.kb-note.warn {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(178, 84, 92, 0.09);
+  color: var(--rose);
+  line-height: 1.6;
+}
+
+/* ===== 変動する固定費の「今月の実績」（家計簿タブ・2026-08-13） ===== */
+
+.kb-variable {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 6px 0 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--soft);
+}
+
+.kb-variable label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.kb-variable input {
+  width: 6.5em;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  font-size: 14px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 未入力を「入力済み」と見間違えないよう、プレースホルダは薄く小さく出す */
+.kb-variable input::placeholder {
+  color: var(--muted);
+  opacity: 0.55;
+  font-size: 12px;
+}
+
+.kb-variable em {
+  font-size: 11px;
+  font-style: normal;
+  color: var(--amber);
+}
+
+/* 実績が入ったら「見込みで計算中」の注意色を消す */
+.kb-variable.done {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.kb-variable.done em {
+  color: var(--green);
+}
+
+/* ===== 明日の配分（記録タブ・2026-08-13） ===== */
+
+.plan-kinds {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.plan-kinds button {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 6px;
+}
+
+.plan-kinds button small {
+  font-size: 11px;
+  opacity: 0.7;
+  font-weight: 600;
+}
+
+.plan-row,
+.plan-free {
+  display: grid;
+  grid-template-columns: 5em 1fr 2em;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+/* 自由時間は配分の分母なので、項目より一段強く見せる */
+.plan-free {
+  padding: 8px 0;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--line);
+  font-weight: 700;
+}
+
+.plan-row-label {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.plan-free .plan-row-label {
+  color: var(--ink);
+}
+
+.plan-row input,
+.plan-free input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 15px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.plan-unit {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.plan-summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.plan-used {
+  font-size: 13px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.plan-slack {
+  font-size: 17px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+.plan-slack.ok {
+  color: var(--green);
+}
+
+/* 余白が2時間以上＝「ここが空く」と分かるように目立たせる。責める色ではなく注意の色 */
+.plan-slack.wide {
+  color: var(--amber);
+}
+
+.plan-slack.over {
+  color: var(--rose);
+}
+
+.plan-note {
+  font-size: 12px;
+  color: var(--muted);
+}
+
 /* タブが4つになったので、狭い画面で「先の見通し」が2行に折り返さないよう詰める（2026-08-13） */
 @media (max-width: 430px) {
   .tabbar {
@@ -2035,15 +2205,17 @@ const DEFAULT_CONFIG = {
     { name: "NISA積立", amount: 20000, day: 27, pay: "三井住友", invest: true },
     { name: "奨学金", amount: 17000, day: 27, pay: "口座", from: "2026-10" },
     { name: "ハーモニーホール福井", amount: 16000, day: 27, pay: "口座" },
-    { name: "ガス", amount: 4000, day: 27, pay: "口座" },
+    // variable＝毎月来るが金額が変わる。amount は見込みで、請求が来たら「今月の実績」を入れる
+    { name: "ガス", amount: 4000, day: 27, pay: "口座", variable: true },
     { name: "iPhone16", amount: 3500, day: 27, pay: "口座" },
-    { name: "電気", amount: 3500, day: 27, pay: "口座" },
+    { name: "電気", amount: 3500, day: 27, pay: "口座", variable: true },
     { name: "楽天", amount: 3200, day: 27, pay: "口座" },
     { name: "ChatGPT", amount: 3000, day: 27, pay: "口座" },
     { name: "Claude", amount: 3000, day: 30, pay: "口座" },
-    { name: "ヘアカット", amount: 3000, day: 27, pay: "口座" },
+    // ヘアカットは固定費から外した（2026-08-13・本人判断）。
+    // 毎月必ず来るものではないので、切った日に変動費「美容・ヘア」で記録する
     { name: "ジム", amount: 2600, day: 27, pay: "口座" },
-    { name: "水道", amount: 2500, day: 27, pay: "口座" },
+    { name: "水道", amount: 2500, day: 27, pay: "口座", variable: true },
     { name: "Apple Music", amount: 1180, day: 20, pay: "口座" },
     { name: "Amazon", amount: 600, day: 27, pay: "口座" },
     { name: "iCloud", amount: 150, day: 25, pay: "口座" }
@@ -2090,13 +2262,32 @@ function kbLoad() {
   kb.expenses = kbReadJson(EXPENSE_KEY, {});
   const stored = kbReadJson(CONFIG_KEY, {});
 
-  // 保存済みの固定費に、後から足した項目（pay など）を埋める
-  const fixed = (stored.fixed || DEFAULT_CONFIG.fixed).map((item) => {
+  // 保存済みの固定費に、後から足した項目（pay・variable など）を埋める
+  let fixed = (stored.fixed || DEFAULT_CONFIG.fixed).map((item) => {
     const preset = DEFAULT_CONFIG.fixed.find((d) => d.name === item.name);
-    return { ...item, pay: item.pay || preset?.pay || "口座" };
+    return {
+      ...item,
+      pay: item.pay || preset?.pay || "口座",
+      // 既に端末に保存済みの設定にも variable を後付けする（デフォルトを変えるだけでは届かない）
+      variable: item.variable ?? preset?.variable ?? false
+    };
   });
 
+  /* 移行（2026-08-13）：ヘアカットを固定費から外す。
+     翔大の判断＝毎月必ず来るものではないので固定費にしない。
+     ⚠️ 過去の月の集計を壊さないよう【削除ではなく先月で終了】にする（to を立てる）。
+     消してしまうと7月の貯金額まで遡って変わる＝8/9に直したバグと同じ壊れ方になる。 */
+  if (!stored.migratedHairCut) {
+    const thisYm = kbMonthKey(kbToday());
+    fixed = fixed.map((item) =>
+      item.name === "ヘアカット" && !item.to
+        ? { ...item, to: kbAddMonths(thisYm, -1) }
+        : item
+    );
+  }
+
   kb.config = {
+    migratedHairCut: true,
     ...DEFAULT_CONFIG,
     ...stored,
     fixed,
@@ -2173,6 +2364,23 @@ function kbFixedFor(ym) {
   return kb.config.fixed.filter((item) => kbFixedActive(item, ym));
 }
 
+/* 毎月来るが金額が変わるもの（電気・ガス・水道）＝ variable: true（2026-08-13 追加）
+
+   翔大の指摘＝「電気代水道代ガス代は固定費にできない」。そのとおりで、
+   固定額で置いていると請求が来るたびに過去の月まで金額が書き換わる（8/9に直したのと同じ壊れ方）。
+   かといって変動費に入れると「崩れた日に何を買ったか」の分析に光熱費が混ざって使えなくなる。
+   → 固定費の枠に残したまま【月ごとの実績】を持たせる。
+      actuals["2026-08"] があればそれ、無ければ amount（＝見込み）を使う。 */
+function kbFixedAmount(item, ym) {
+  const actual = item.actuals && item.actuals[ym];
+  return Number(actual !== undefined && actual !== "" ? actual : item.amount || 0);
+}
+
+function kbFixedHasActual(item, ym) {
+  const actual = item.actuals && item.actuals[ym];
+  return actual !== undefined && actual !== "";
+}
+
 // 引落日は月末を超えられない（31日指定でも2月は28日）
 function kbFixedDay(item, ym) {
   return Math.min(Number(item.day || 27), kbDaysInMonth(ym));
@@ -2200,8 +2408,9 @@ function kbFixedStatus(item, dateStr) {
 // 今月の固定費を「済み／これから／カード」に分ける。合計だけだと何が起きたか見えない。
 function kbFixedMonthSplit(dateStr) {
   const out = { done: 0, upcoming: 0, card: 0, total: 0 };
-  for (const item of kbFixedFor(kbMonthKey(dateStr))) {
-    const amount = Number(item.amount || 0);
+  const splitYm = kbMonthKey(dateStr);
+  for (const item of kbFixedFor(splitYm)) {
+    const amount = kbFixedAmount(item, splitYm);
     out.total += amount;
     const kind = kbFixedStatus(item, dateStr).kind;
     if (kind === "card") out.card += amount;
@@ -2212,7 +2421,7 @@ function kbFixedMonthSplit(dateStr) {
 }
 
 function kbFixedTotal(ym) {
-  return kbFixedFor(ym).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  return kbFixedFor(ym).reduce((sum, item) => sum + kbFixedAmount(item, ym), 0);
 }
 
 function kbTakeHome(ym) {
@@ -2230,7 +2439,7 @@ function kbRemainingFixed(dateStr) {
   return kbFixedFor(ym)
     .filter((item) => (item.pay || "口座") === "口座")
     .filter((item) => kbFixedDay(item, ym) >= day)
-    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    .reduce((sum, item) => sum + kbFixedAmount(item, ym), 0);
 }
 
 // 今月の貯金。「使えるお金」が今の残高の話なのに対して、これは今月の収支の話。
@@ -2244,8 +2453,8 @@ function kbSavings(dateStr) {
   const fixedAll = kbFixedFor(ym);
   const invest = fixedAll
     .filter((item) => item.invest)
-    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
-  const fixedTotal = fixedAll.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    .reduce((sum, item) => sum + kbFixedAmount(item, ym), 0);
+  const fixedTotal = fixedAll.reduce((sum, item) => sum + kbFixedAmount(item, ym), 0);
 
   const spent = kbExpensesInMonth(ym).reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const daysLeft = Math.max(0, daysInMonth - day);
@@ -2321,7 +2530,7 @@ function kbFixedCardCharges(dateStr) {
       const chargeDate = `${targetYm}-${pad(kbFixedDay(item, targetYm))}`;
       if (chargeDate > dateStr) continue; // まだ請求が立っていない（来月の話）
       if (kbPayoutDate({ date: chargeDate, pay }) <= dateStr) continue; // 引き落とし済み
-      rows.push({ card: pay, name: item.name, amount: Number(item.amount || 0) });
+      rows.push({ card: pay, name: item.name, amount: kbFixedAmount(item, targetYm) });
     }
   }
   return rows;
@@ -2371,16 +2580,67 @@ function kbCardOutstanding(dateStr) {
 /* ---------- 残高の推定 ---------- */
 
 // 最後に手入力した残高から、即時型の支出を引いた推定値
+/* ⚠️ 2026-08-13 バグ修正：固定費の引落を残高から引いていなかった。
+
+   翔大の指摘＝「今月のジム代が引き落とされたことになっているけど、
+   まだそのぶん口座の数字から引かれてない」。そのとおりで、引落日を過ぎた固定費は
+   `kbRemainingFixed`（これから出ていく分）からは外れるのに、推定残高からも引かれていなかった。
+   結果、引落日を過ぎた瞬間にその金額が【どこからも引かれない＝まだ使える】扱いになり、
+   「使えるお金」が実際より多く出ていた（ジムなら2,600円ぶん）。
+
+   正しい形＝残高を手入力した日より後に口座から出ていったものを全部引く：
+     ① 即時型の支出（デビット・現金）
+     ② 引落日が過ぎた口座払いの固定費
+     ③ 引落日が過ぎたカードの請求（まとめて口座から出る）
+   手入力した残高より前の引落は、その残高に既に反映されているので引かない（二重に引かないため）。 */
 function kbEstimatedBalance() {
   const { amount, updatedAt } = kb.config.balance;
   if (!updatedAt) return null;
-  const spent = kbAllExpenses()
+  const today = kbToday();
+
+  // ① 即時型の支出
+  let out = kbAllExpenses()
     .filter((item) => {
       const method = PAY_METHODS.find((m) => m.key === item.pay);
       return method && method.type === "instant" && item.date > updatedAt;
     })
     .reduce((sum, item) => sum + Number(item.amount || 0), 0);
-  return Number(amount || 0) - spent;
+
+  // ② 口座払いの固定費のうち、残高を入れた日より後に引落日が来たもの
+  //    締め日のズレで前月分が残ることがあるので2ヶ月遡る
+  const ym = kbMonthKey(today);
+  for (let back = 2; back >= 0; back -= 1) {
+    const targetYm = kbAddMonths(ym, -back);
+    for (const item of kbFixedFor(targetYm)) {
+      if ((item.pay || "口座") !== "口座") continue;
+      const payDate = `${targetYm}-${pad(kbFixedDay(item, targetYm))}`;
+      if (payDate <= updatedAt || payDate > today) continue;
+      out += kbFixedAmount(item, targetYm);
+    }
+  }
+
+  // ③ カードの引落（記録した支出＋カード払いの固定費）が口座から出た分
+  for (const item of kbAllExpenses()) {
+    const method = PAY_METHODS.find((m) => m.key === item.pay);
+    if (!method || method.type !== "credit") continue;
+    const payDate = kbPayoutDate(item);
+    if (payDate <= updatedAt || payDate > today) continue;
+    out += Number(item.amount || 0);
+  }
+  for (let back = 3; back >= 0; back -= 1) {
+    const targetYm = kbAddMonths(ym, -back);
+    for (const item of kbFixedFor(targetYm)) {
+      const pay = item.pay || "口座";
+      const method = PAY_METHODS.find((m) => m.key === pay);
+      if (!method || method.type !== "credit") continue;
+      const chargeDate = `${targetYm}-${pad(kbFixedDay(item, targetYm))}`;
+      const payDate = kbPayoutDate({ date: chargeDate, pay });
+      if (payDate <= updatedAt || payDate > today) continue;
+      out += kbFixedAmount(item, targetYm);
+    }
+  }
+
+  return Number(amount || 0) - out;
 }
 
 /* ---------- 集計 ---------- */
@@ -2702,6 +2962,7 @@ function kbRenderMonth() {
           )}" value="${opening || ""}" placeholder="0"></label>
         </div>
         ${parts.length ? `<p class="kb-note">内訳：${parts.join(" ＋ ")}</p>` : ""}
+        ${kbOpeningWarning(detail, opening)}
         ${
           openingLeft
             ? `<p class="kb-note">次回請求 ${yen(opening)} は ${escapeHtml(
@@ -2814,6 +3075,40 @@ function kbRefreshFixedStatus() {
   }
 }
 
+/* 変動する固定費（電気・ガス・水道）の「今月の実績」入力（2026-08-13）
+
+   翔大＝「新しく項目を作って、俺が手動で引き落とされた時に入れる」。
+   実績を入れるまでは見込み額で計算しつつ、入っていないことが分かるようにする
+   （見込みのまま黙って足すと、月末の貯金見込みが当たっているように見えてしまう）。 */
+/* カード払いの固定費（例：NISA積立＝三井住友）は毎月このアプリが自動で請求に乗せている。
+   その分をカードアプリの「次回請求額」としてもう一度入れると二重になる（2026-08-13 実際に起きかけた）。
+   内訳を出しているだけでは気づけなかったので、能動的に警告する。 */
+function kbOpeningWarning(detail, opening) {
+  if (!detail.fixed) return "";
+  if (opening > 0) {
+    return `<p class="kb-note warn">⚠️ このカードは固定費 ${yen(detail.fixed)}（${escapeHtml(
+      [...new Set(detail.fixedNames)].join("・")
+    )}）を毎月自動で計上しています。<strong>次回請求額にその分を含めると二重</strong>になります。含めているなら差し引いた額に直してください。</p>`;
+  }
+  return `<p class="kb-note">固定費 ${yen(detail.fixed)}（${escapeHtml(
+    [...new Set(detail.fixedNames)].join("・")
+  )}）は自動で計上済みです。<strong>次回請求額には入れないでください。</strong></p>`;
+}
+
+function kbVariableRow(item, index, ym) {
+  const has = kbFixedHasActual(item, ym);
+  const value = has ? item.actuals[ym] : "";
+  const month = Number(ym.slice(5, 7));
+  return `
+    <div class="kb-variable${has ? " done" : ""}">
+      <label>${month}月の実績
+        <input type="number" inputmode="numeric" min="0" placeholder="未入力"
+          data-fixed-actual="${index}" value="${escapeHtml(value)}">
+      </label>
+      <em>${has ? "実績で計算中" : `未入力（見込 ${yen(item.amount)} で計算中）`}</em>
+    </div>`;
+}
+
 function kbRenderFixed() {
   const today = kbToday();
   const payOptions = kbPayOptions();
@@ -2835,8 +3130,9 @@ function kbRenderFixed() {
             <button type="button" class="kb-fixed-remove" data-fixed-delete="${index}">削除</button>
           </div>
         </div>
+        ${item.variable ? kbVariableRow(item, index, kbMonthKey(today)) : ""}
         <div class="kb-fixed-fields">
-          <label>¥<input type="number" inputmode="numeric" data-fixed-amount="${index}" value="${Number(
+          <label>${item.variable ? "見込" : ""}¥<input type="number" inputmode="numeric" data-fixed-amount="${index}" value="${Number(
         item.amount
       )}"></label>
           <label>引落<input type="number" inputmode="numeric" min="1" max="31" data-fixed-day="${index}" value="${Number(
@@ -3130,6 +3426,22 @@ function kbBoot() {
     const el = event.target;
     const amountIndex = el.dataset.fixedAmount;
     const dayIndex = el.dataset.fixedDay;
+    const actualIndex = el.dataset.fixedActual;
+
+    // 変動する固定費の「今月の実績」。その月だけに入る値なので、
+    // 金額変更のような「過去も直すか」の確認は要らない（過去の月は別のキーで持っている）
+    if (actualIndex !== undefined) {
+      const item = kb.config.fixed[Number(actualIndex)];
+      if (!item) return;
+      if (!item.actuals) item.actuals = {};
+      const ym = kbMonthKey(kbToday());
+      if (el.value === "") delete item.actuals[ym];
+      else item.actuals[ym] = Number(el.value) || 0;
+      kbSaveConfig();
+      kbRenderMonth();
+      kbRenderFixed();
+      return;
+    }
 
     // 金額はここで確定させない。過去も直すのか今月からなのかを選んでもらう
     if (amountIndex !== undefined) {
@@ -3754,14 +4066,86 @@ const dailyGroups = [
       { key: "worry", label: "不安・モヤモヤ・愚痴", type: "textarea" },
       { key: "tomorrow", label: "明日どうしたいか（願望）", type: "textarea" },
       {
-        key: "prediction",
-        label: "明日はたぶんこうなる（予測）",
-        type: "textarea",
-        placeholder: "願望ではなく予想。外れたところに未知がある"
+        key: "plan",
+        label: "明日の配分",
+        type: "allocation"
       }
     ]
   }
 ];
+
+/* ===== 明日の配分（2026-08-13・旧「明日はたぶんこうなる（予測）」を置き換え） =====
+
+   予測は天気予報であって狙いではないので、当たっても外れても行動が変わらなかった。
+   （8/10「明日は多分朝起きんの遅くなってダラダラしちゃうと思う」→ 8/11そのとおりになったが何も変わらない）
+   配分にすると外れたときに「自分の判断がずれた」と分かるので、振り返りが成立する。
+
+   いちばん大事なのは合計でも達成率でもなく【余白】。
+   8/11は自由時間12hに対して使ったのが6.5h＝余白5.5hで、これが事前に見えていれば
+   「5.5hをどうするか」が事前の問題になっていた（今は事後に「だらだら4.5h」として出てくるだけ）。 */
+
+const PLAN_ACTIVITIES = ["診断士", "アコギ", "エレキ", "ピアノ", "ボーカル", "作曲"];
+
+const PLAN_PRESETS = {
+  // 平日＝18:00-22:00 の4時間
+  平日: { free: 240, alloc: { 診断士: 50, アコギ: 20, エレキ: 40, ピアノ: 40, ボーカル: 0, 作曲: 50 } },
+  // 休日＝6:00起床〜23:00就寝の17時間から、食事・風呂・家事・仮眠の約3.5時間を引いた分
+  休日: { free: 810, alloc: { 診断士: 180, アコギ: 140, エレキ: 60, ピアノ: 60, ボーカル: 70, 作曲: 60 } }
+};
+
+function planKey(name) {
+  return `plan_${name}`;
+}
+
+function planAllocated() {
+  return PLAN_ACTIVITIES.reduce((sum, name) => sum + Number(state.log[planKey(name)] || 0), 0);
+}
+
+function planFree() {
+  const value = Number(state.log.planFree);
+  return Number.isFinite(value) && value > 0 ? value : 0;
+}
+
+// 余白＝自由時間 − 配分の合計。ここが「明日どこが空くか」で、この画面の主役
+function planSummaryHtml(free, used) {
+  if (!free) return `<span class="plan-note">自由時間を入れると余白が出ます</span>`;
+  const slack = free - used;
+  const tone = slack < 0 ? "over" : slack >= 120 ? "wide" : "ok";
+  const label = slack < 0 ? "入りきらない" : "余白";
+  return `
+    <span class="plan-used">配分 ${used}分 / ${free}分</span>
+    <span class="plan-slack ${tone}">${label} ${Math.abs(slack)}分</span>`;
+}
+
+function refreshPlanSummary() {
+  const el = document.querySelector("#planSummary");
+  if (el) el.innerHTML = planSummaryHtml(planFree(), planAllocated());
+}
+
+// /daily が機械的に読めるように、1行1情報で出す（散文にしない）
+function planMarkdown() {
+  const free = planFree();
+  const used = planAllocated();
+  if (!free && !used) return "";
+  const kind = state.log.planKind || "未選択";
+  const parts = PLAN_ACTIVITIES
+    .map((name) => `${name}${Number(state.log[planKey(name)] || 0)}`)
+    .join("／");
+  return [
+    `- 種別：${kind}`,
+    `- 自由時間：${free}分`,
+    `- 配分：${parts}`,
+    `- 配分合計：${used}分 ／ 余白：${free - used}分`
+  ].join("\n");
+}
+
+function planApplyPreset(kind) {
+  const preset = PLAN_PRESETS[kind];
+  if (!preset) return;
+  state.log.planKind = kind;
+  state.log.planFree = preset.free;
+  for (const name of PLAN_ACTIVITIES) state.log[planKey(name)] = preset.alloc[name];
+}
 
 function pad(value) {
   return String(value).padStart(2, "0");
@@ -3993,6 +4377,38 @@ function renderField(field) {
       </div>`;
   }
 
+  if (field.type === "allocation") {
+    const kind = state.log.planKind || "";
+    const free = planFree();
+    const used = planAllocated();
+    const rows = PLAN_ACTIVITIES.map((name) => `
+        <div class="plan-row">
+          <span class="plan-row-label">${name}</span>
+          <input type="number" min="0" step="10" inputmode="numeric" data-key="${planKey(name)}"
+            value="${escapeHtml(state.log[planKey(name)] ?? "")}">
+          <span class="plan-unit">分</span>
+        </div>`).join("");
+
+    return `
+      <div class="field plan">
+        <label>${escapeHtml(field.label)} <span class="scale-hint">まず平日か休日を選ぶ</span></label>
+        <div class="plan-kinds" data-plan-kinds>
+          ${Object.keys(PLAN_PRESETS).map((name) => `
+            <button type="button" class="scale-btn${kind === name ? " active" : ""}" data-kind="${name}">
+              ${name}<small>${Math.round(PLAN_PRESETS[name].free / 60 * 10) / 10}h</small>
+            </button>`).join("")}
+        </div>
+        <div class="plan-free">
+          <span class="plan-row-label">自由時間</span>
+          <input type="number" min="0" step="10" inputmode="numeric" data-key="planFree"
+            value="${escapeHtml(state.log.planFree ?? "")}">
+          <span class="plan-unit">分</span>
+        </div>
+        ${rows}
+        <div class="plan-summary" id="planSummary">${planSummaryHtml(free, used)}</div>
+      </div>`;
+  }
+
   if (field.type === "textarea") {
     return `
       <div class="field">
@@ -4093,7 +4509,7 @@ function buildDailyMarkdown() {
     ["## 良かったこと・できたこと", logVal("good")],
     ["## 不安・モヤモヤ・愚痴", logVal("worry")],
     ["## 明日どうしたいか", logVal("tomorrow")],
-    ["## 明日の予測", logVal("prediction")]
+    ["## 明日の配分", planMarkdown()]
   ];
   for (const [head, text] of diaryBlocks) {
     lines.push("", head);
@@ -4354,6 +4770,16 @@ function boot() {
   dailyForm.addEventListener("click", (event) => {
     const button = event.target.closest("button.scale-btn");
     if (!button) return;
+
+    // 明日の配分：平日／休日を押したら既定値を入れて描き直す（3タップで終わらせるため）
+    if (button.dataset.kind) {
+      planApplyPreset(button.dataset.kind);
+      saveLog();
+      renderDailyForm();
+      updateOutput();
+      return;
+    }
+
     const group = button.parentElement;
     const key = group.dataset.key;
     const val = Number(button.dataset.val);
@@ -4370,6 +4796,8 @@ function boot() {
     const el = event.target;
     if (!el.dataset || el.dataset.key === undefined || el.tagName === "BUTTON") return;
     state.log[el.dataset.key] = el.value;
+    // 配分の数字を触ったら余白だけを描き直す（全体を再描画すると入力中のカーソルが飛ぶ）
+    if (el.dataset.key.startsWith("plan")) refreshPlanSummary();
     saveLog();
     updateOutput();
   });
