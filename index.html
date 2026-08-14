@@ -1757,6 +1757,114 @@ textarea {
   background: var(--green);
 }
 
+/* ---- 計画 vs 実績（2026-08-13）---- */
+
+.rv-plan {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--soft);
+}
+
+.rv-plan:last-of-type {
+  border-bottom: 0;
+}
+
+.rv-plan-head,
+.rv-plan-foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.rv-plan-head {
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.rv-plan-val {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.rv-plan-val em {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.rv-plan-foot {
+  margin-top: 5px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.rv-over {
+  color: var(--rose);
+}
+
+/* 計画を決めていないグループ。責める色にはしない（決めていないだけで、悪いことではない） */
+.rv-plan.unset .rv-plan-val em {
+  color: var(--amber);
+}
+
+/* ---- 計画の編集（先の見通しタブ）---- */
+
+.kb-plan-total {
+  font-size: 16px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+.kb-plan-row {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--soft);
+}
+
+.kb-plan-row:last-child {
+  border-bottom: 0;
+}
+
+.kb-plan-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.kb-plan-head strong {
+  font-size: 14px;
+}
+
+.kb-plan-head label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.kb-plan-head input {
+  width: 7em;
+  padding: 7px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 15px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.kb-plan-row.unset input {
+  border-color: var(--amber);
+}
+
+.kb-plan-row > small {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
 /* ---- 折りたたみ ---- */
 
 .rv-more {
@@ -2224,6 +2332,22 @@ textarea {
       <section class="panel">
         <div class="panel-heading">
           <div>
+            <p class="eyebrow">自分で決めた割り当て</p>
+            <h2>計画</h2>
+          </div>
+          <span class="kb-plan-total" id="kbPlanTotal"></span>
+        </div>
+        <p class="kb-note">
+          <strong>固定費とは別物</strong>です。固定費は毎月勝手に出ていくお金、こちらは変動費を何にいくらまで使うかの自分の計画。
+          使った額との比較は「見返し」タブに出ます。
+        </p>
+        <div id="kbPlanList"></div>
+        <p class="kb-note" id="kbPlanNote"></p>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
             <p class="eyebrow">自動計上</p>
             <h2>固定費</h2>
           </div>
@@ -2339,17 +2463,19 @@ const DEFAULT_CONFIG = {
     // variable＝毎月来るが金額が変わる。amount は見込みで、請求が来たら「今月の実績」を入れる
     { name: "ガス", amount: 4000, day: 27, pay: "口座", variable: true },
     { name: "iPhone16", amount: 3500, day: 27, pay: "口座" },
-    { name: "電気", amount: 3500, day: 27, pay: "口座", variable: true },
-    { name: "楽天", amount: 3200, day: 27, pay: "口座" },
+    { name: "電気", amount: 4000, day: 27, pay: "口座", variable: true },
+    // 楽天モバイル＝無制限プラン税込3,278。楽天リンクを使わない通話をした月だけ加算されるので
+    // 3,400 で置いておく（携帯・Wi-Fi・SIMを1本で賄っている＝通信費はこれだけ）
+    { name: "楽天モバイル", amount: 3400, day: 27, pay: "口座" },
     { name: "ChatGPT", amount: 3000, day: 27, pay: "口座" },
     { name: "Claude", amount: 3000, day: 30, pay: "口座" },
     // ヘアカットは固定費から外した（2026-08-13・本人判断）。
     // 毎月必ず来るものではないので、切った日に変動費「美容・ヘア」で記録する
-    { name: "ジム", amount: 2600, day: 27, pay: "口座" },
+    { name: "ジム", amount: 2530, day: 27, pay: "口座" },
     { name: "水道", amount: 2500, day: 27, pay: "口座", variable: true },
     { name: "Apple Music", amount: 1180, day: 20, pay: "口座" },
     { name: "Amazon", amount: 600, day: 27, pay: "口座" },
-    { name: "iCloud", amount: 150, day: 25, pay: "口座" }
+    { name: "iCloud", amount: 180, day: 25, pay: "口座" }
   ],
   // 仮上限。翔大が作った計画値なので正しくない前提。実測平均を横に併記して1ヶ月後に直す
   budgets: {
@@ -2358,12 +2484,30 @@ const DEFAULT_CONFIG = {
     "美容・ヘア": 5600,
     仕事コーヒー: 1000
   },
+  /* 計画の割り当て（2026-08-13 追加）
+     本人の指摘＝「固定費と自分の計画していた割り当ては違うから分けた方がいい」
+     「計画に対してそれぞれ今月どれだけ使っているかが今よくわからん」。
+     翔大はカテゴリ14個の単位ではなく【グループ】で計画を立てている
+     （例：食費35,000＝米10,000＋週の買いだめ5,000×4＋外食おかず5,000）。
+     なので計画はグループ単位で持ち、実績は所属カテゴリを足し上げて比べる。
+     amount が null＝まだ決めていない（0と区別する。0は「使わないと決めた」の意味になる） */
+  planGroups: [
+    { name: "食費", amount: 35000, cats: ["食料品", "外食", "カフェ", "お菓子・ジュース"] },
+    { name: "日用品・雑貨", amount: 10000, cats: ["日用品"] },
+    // ヘアカット3,000＋美容2,600＋ヘアケア3,000（2026-08-13 本人の計画）
+    { name: "美容・ヘア", amount: 8600, cats: ["美容・ヘア"] },
+    { name: "仕事コーヒー", amount: 1000, cats: ["仕事コーヒー"] },
+    // 服は「仕事のスーツなどでちょくちょく要る」＝継続的に出るので独立させる（2026-08-14 本人）。
+    // 残り（音楽・交通・交際・医療・娯楽）は本人いわく「ほぼ発生しない」ので1本にまとめる
+    { name: "服", amount: 5000, cats: ["服"] },
+    { name: "その他", amount: 2000, cats: ["音楽", "交通・帰省", "交際・飲み会", "医療", "娯楽", "その他"] }
+  ],
   // opening＝アプリを使い始める前に使った分（＝カードアプリに出ている「次回請求額」）。
   // これを入れないと、記録していない過去のカード利用ぶん「使えるお金」が多く出てしまう。
   cards: {
     Amazonカード: { closing: "monthEnd", payDay: 26, opening: 0, openingSetAt: "" },
-    // 15日締め翌月10日 と 月末締め翌月26日 の選択制。本人未確認なので後者で仮置き
-    三井住友: { closing: "monthEnd", payDay: 26, opening: 0, openingSetAt: "", unconfirmed: true },
+    // 2026-08-14 本人確認済み＝引落26日（月末締め）
+    三井住友: { closing: "monthEnd", payDay: 26, opening: 0, openingSetAt: "" },
     楽天カード: { closing: "monthEnd", payDay: 27, opening: 0, openingSetAt: "" }
   },
   balance: { amount: 0, updatedAt: "" },
@@ -2417,12 +2561,33 @@ function kbLoad() {
     );
   }
 
+  /* 移行（2026-08-13）：本人が出した計画に合わせて実額へ直す。
+     これは「値上がりした」のではなく【最初から入れていた額が違っていた】ので、
+     過去の月も含めて直す（＝訂正）。金額変更の2択でいう「金額が間違っていた」側。 */
+  if (!stored.migratedAmounts0813) {
+    const corrections = { ジム: 2530, iCloud: 180, 電気: 4000 };
+    fixed = fixed.map((item) =>
+      corrections[item.name] !== undefined ? { ...item, amount: corrections[item.name] } : item
+    );
+    // 「楽天」が何の支払いか分からないままだったが、楽天モバイル（携帯・Wi-Fi・SIMを1本で賄う）と判明。
+    // 名前も直しておかないと、次に見たときまた「これ何だっけ」になる
+    fixed = fixed.map((item) =>
+      item.name === "楽天" ? { ...item, name: "楽天モバイル", amount: 3400 } : item
+    );
+  }
+
   kb.config = {
     migratedHairCut: true,
+    migratedAmounts0813: true,
     ...DEFAULT_CONFIG,
     ...stored,
     fixed,
     budgets: { ...DEFAULT_CONFIG.budgets, ...(stored.budgets || {}) },
+    // グループの内訳（cats）は仕様なので常に既定を使い、金額だけ保存済みの値を引き継ぐ
+    planGroups: DEFAULT_CONFIG.planGroups.map((group) => {
+      const saved = (stored.planGroups || []).find((g) => g.name === group.name);
+      return { ...group, amount: saved && saved.amount !== undefined ? saved.amount : group.amount };
+    }),
     cards: { ...DEFAULT_CONFIG.cards, ...(stored.cards || {}) },
     balance: { ...DEFAULT_CONFIG.balance, ...(stored.balance || {}) },
     residentTax: { ...DEFAULT_CONFIG.residentTax, ...(stored.residentTax || {}) }
@@ -2812,6 +2977,37 @@ function kbBudgetTotal() {
   return Object.values(kb.config.budgets).reduce((sum, v) => sum + Number(v || 0), 0);
 }
 
+/* 計画グループの「今月いくら使ったか」。実績はカテゴリの合計、計画はグループの額。
+   amount が null＝未設定。使った額は出すが、達成率や残りは出さない（比べる相手が無いので）。 */
+function kbPlanRows(ym) {
+  const totals = kbCategoryTotals(ym);
+  const unplannedByCat = new Map();
+  for (const item of kbExpensesInMonth(ym)) {
+    if (!item.unplanned) continue;
+    unplannedByCat.set(item.cat, (unplannedByCat.get(item.cat) || 0) + Number(item.amount || 0));
+  }
+  return kb.config.planGroups.map((group) => {
+    const spent = group.cats.reduce((sum, cat) => sum + (totals.get(cat) || 0), 0);
+    const unplanned = group.cats.reduce((sum, cat) => sum + (unplannedByCat.get(cat) || 0), 0);
+    const planned = group.amount === null || group.amount === undefined ? null : Number(group.amount);
+    return {
+      name: group.name,
+      cats: group.cats,
+      spent,
+      unplanned,
+      planned,
+      left: planned === null ? null : planned - spent
+    };
+  });
+}
+
+function kbPlanTotal() {
+  return kb.config.planGroups.reduce(
+    (sum, g) => sum + (g.amount === null || g.amount === undefined ? 0 : Number(g.amount)),
+    0
+  );
+}
+
 // 「その他」に何を入れたかをメモ別に集計する。
 // カテゴリを先に増やすと1カテゴリあたりの件数が減って崩れた日の検証ができなくなるので、
 // まずここに溜めて、同じものが3回以上出たものだけカテゴリに昇格させる。
@@ -3106,7 +3302,7 @@ function kbRenderMonth() {
             : ""
         }
         ${
-          detail.fixed
+          detail.fixed && !opening
             ? `<p class="kb-note">${escapeHtml(
                 [...new Set(detail.fixedNames)].join("・")
               )} は固定費として自動で入ります。<strong>次回請求には入れないでください</strong>（二重に引かれます）。</p>`
@@ -3214,16 +3410,14 @@ function kbRefreshFixedStatus() {
 /* カード払いの固定費（例：NISA積立＝三井住友）は毎月このアプリが自動で請求に乗せている。
    その分をカードアプリの「次回請求額」としてもう一度入れると二重になる（2026-08-13 実際に起きかけた）。
    内訳を出しているだけでは気づけなかったので、能動的に警告する。 */
+// 次回請求額を入れている状態でだけ赤く出す。
+// 入れていないとき（opening=0）は既存の「次回請求には入れないでください」の注記が下に出るので、
+// ここで同じことを言うと同じ文が2回並ぶ（2026-08-13 実際に並んだ）。
 function kbOpeningWarning(detail, opening) {
-  if (!detail.fixed) return "";
-  if (opening > 0) {
-    return `<p class="kb-note warn">⚠️ このカードは固定費 ${yen(detail.fixed)}（${escapeHtml(
-      [...new Set(detail.fixedNames)].join("・")
-    )}）を毎月自動で計上しています。<strong>次回請求額にその分を含めると二重</strong>になります。含めているなら差し引いた額に直してください。</p>`;
-  }
-  return `<p class="kb-note">固定費 ${yen(detail.fixed)}（${escapeHtml(
+  if (!detail.fixed || !opening) return "";
+  return `<p class="kb-note warn">⚠️ このカードは固定費 ${yen(detail.fixed)}（${escapeHtml(
     [...new Set(detail.fixedNames)].join("・")
-  )}）は自動で計上済みです。<strong>次回請求額には入れないでください。</strong></p>`;
+  )}）を毎月自動で計上しています。<strong>次回請求額にその分を含めると二重</strong>になります。含めているなら差し引いた額に直してください。</p>`;
 }
 
 function kbVariableRow(item, index, ym) {
@@ -3238,6 +3432,41 @@ function kbVariableRow(item, index, ym) {
       </label>
       <em>${has ? "実績で計算中" : `未入力（見込 ${yen(item.amount)} で計算中）`}</em>
     </div>`;
+}
+
+/* 計画（グループ単位の割り当て）の編集。見るのは見返しタブ、直すのはここ（2026-08-13）。
+   固定費と同じ画面に置くと「固定費と計画は別物」という区別がまた曖昧になるので、節を分けている。 */
+function kbRenderPlan() {
+  const list = document.querySelector("#kbPlanList");
+  if (!list) return;
+
+  list.innerHTML = kb.config.planGroups
+    .map((group, index) => {
+      const unset = group.amount === null || group.amount === undefined;
+      return `
+      <div class="kb-plan-row${unset ? " unset" : ""}">
+        <div class="kb-plan-head">
+          <strong>${escapeHtml(group.name)}</strong>
+          <label>¥<input type="number" inputmode="numeric" min="0" placeholder="未設定"
+            data-plan-amount="${index}" value="${unset ? "" : Number(group.amount)}"></label>
+        </div>
+        <small>${escapeHtml(group.cats.join("・"))}</small>
+      </div>`;
+    })
+    .join("");
+
+  const total = document.querySelector("#kbPlanTotal");
+  if (total) total.textContent = yen(kbPlanTotal());
+
+  const unsetNames = kb.config.planGroups
+    .filter((g) => g.amount === null || g.amount === undefined)
+    .map((g) => g.name);
+  const note = document.querySelector("#kbPlanNote");
+  if (note) {
+    note.innerHTML = unsetNames.length
+      ? `<strong>${escapeHtml(unsetNames.join("・"))}</strong> はまだ決めていません。決めるまでは「使った額」だけ出て、残りは出ません。空欄と0は違う扱いです（0＝使わないと決めた）。`
+      : `合計 ${yen(kbPlanTotal())}。手取りから固定費を引いた残りと比べて無理がないかは「見返し」タブで確認できます。`;
+  }
 }
 
 function kbRenderFixed() {
@@ -3419,6 +3648,7 @@ function kbRenderAll() {
   kbRenderBalance();
   kbRenderFuture();
   kbRenderFixed();
+  kbRenderPlan();
   if (typeof updateOutput === "function") updateOutput();
 }
 
@@ -3680,6 +3910,19 @@ function kbBoot() {
     else if (el.id === "kbPaydayInput") kb.config.payday = Number(el.value) || 25;
     else return;
     kbSaveConfig();
+    kbRenderMonth();
+  });
+
+  // 計画（グループ単位の割り当て）。空欄＝未設定として保存する（0とは意味が違う）
+  document.querySelector("#kbPlanList").addEventListener("input", (event) => {
+    const index = event.target.dataset.planAmount;
+    if (index === undefined) return;
+    const group = kb.config.planGroups[Number(index)];
+    if (!group) return;
+    group.amount = event.target.value === "" ? null : Number(event.target.value) || 0;
+    kbSaveConfig();
+    const total = document.querySelector("#kbPlanTotal");
+    if (total) total.textContent = yen(kbPlanTotal());
     kbRenderMonth();
   });
 
@@ -3968,11 +4211,34 @@ function rvRenderMoney(days) {
         <span class="rv-row-val">${rvYen(row.total)}</span>
       </div>`).join("") || `<p class="rv-note rv-fine">未引落のカード請求はありません</p>`;
 
-  const cats = kbCategoryTotals(rv.ym);
-  const food = RV_FOOD_CATS.reduce((sum, key) => sum + (cats.get(key) || 0), 0);
-  const foodUnplanned = kbExpensesInMonth(rv.ym)
-    .filter((item) => RV_FOOD_CATS.includes(item.cat) && item.unplanned)
-    .reduce((sum, item) => sum + rvNum(item.amount), 0);
+  // 計画（グループ単位）に対して今月どこまで使ったか。
+  // 「計画に対してそれぞれ今月どれだけ使っているかが今よくわからん」（2026-08-13 本人）への答え。
+  const planRows = kbPlanRows(rv.ym);
+  const planTotal = kbPlanTotal();
+  const planSpent = planRows.reduce((sum, row) => sum + row.spent, 0);
+  const planLeft = planTotal - planSpent;
+
+  const planHtml = planRows
+    .map((row) => {
+      if (row.planned === null) {
+        return `<div class="rv-plan">
+            <div class="rv-plan-head"><span>${rvEsc(row.name)}</span>
+              <span class="rv-plan-val">${rvYen(row.spent)} <em>計画なし</em></span></div>
+          </div>`;
+      }
+      const ratio = row.planned ? row.spent / row.planned : 0;
+      const over = row.spent > row.planned;
+      return `<div class="rv-plan">
+          <div class="rv-plan-head"><span>${rvEsc(row.name)}</span>
+            <span class="rv-plan-val">${rvYen(row.spent)} <em>/ ${rvYen(row.planned)}</em></span></div>
+          ${rvBar(ratio, over ? "over" : "")}
+          <div class="rv-plan-foot">
+            <span>${over ? `<b class="rv-over">${rvYen(-row.left)} オーバー</b>` : `残り ${rvYen(row.left)}`}</span>
+            ${row.unplanned ? `<span>うち予定外 ${rvYen(row.unplanned)}</span>` : ""}
+          </div>
+        </div>`;
+    })
+    .join("");
 
   // 「固定費と変動費がどうなってるのか分からない」（2026-08-13 本人）への答え＝
   // 手取りが何にいくら持っていかれて、いくら残るかを1本のバーで見せる。
@@ -3992,6 +4258,8 @@ function rvRenderMoney(days) {
     <div class="panel-heading"><div><p class="eyebrow">お金</p><h2>今使っていいお金</h2></div>
       <span class="rv-big ${usable === null ? "unknown" : usable < 0 ? "neg" : ""}">${usable === null ? "—" : rvYen(usable)}</span></div>
     <p class="rv-note rv-fine">今月これからの固定費とカード請求を全部よけた残り。ここから出しても月末に足りなくならない額</p>
+    <div class="rv-row"><span class="rv-row-label">うち計画で残っている分</span><span class="rv-row-val ${planLeft < 0 ? "neg" : ""}">${rvYen(planLeft)}</span></div>
+    <p class="rv-note rv-fine">計画 ${rvYen(planTotal)} に対して今月 ${rvYen(planSpent)} 使った残り。<strong>これを超えて使うと貯金が減る</strong>（使えなくなるわけではない）</p>
 
     <h3 class="rv-sub">今月このあと残る（貯金）</h3>
     <div class="rv-savings ${save.cash < 0 ? "neg" : ""}">${rvYen(save.cash)}</div>
@@ -4009,6 +4277,10 @@ function rvRenderMoney(days) {
     <div class="rv-row"><span class="rv-row-label"><i class="rv-key left"></i>残り</span><span class="rv-row-val ${leftover > 0 ? "plus" : "neg"}">${rvYen(leftover)}</span></div>
     <p class="rv-note rv-fine">固定費＝毎月決まって出るもの（家賃・光熱費・サブスク）。変動費＝自分で使った分。変動費は今 ${rvYen(save.spent)} 使っていて、このペースなら月末 ${rvYen(projected)} になる見込み</p>
 
+    <h3 class="rv-sub">計画に対して今どこまで使ったか</h3>
+    ${planHtml}
+    <p class="rv-note rv-fine">計画は<strong>固定費とは別物</strong>で、翔大が自分で決めた変動費の割り当て。金額は「先の見通し」タブで直せます</p>
+
     <details class="rv-more">
       <summary>内訳をみる</summary>
       ${balanceLine}
@@ -4024,9 +4296,6 @@ function rvRenderMoney(days) {
       <h3 class="rv-sub">カードの請求</h3>
       ${cardRows}
 
-      <h3 class="rv-sub">食費 ／ 枠 ${rvYen(RV_FOOD_BUDGET)}</h3>
-      ${rvBar(food / RV_FOOD_BUDGET, food > RV_FOOD_BUDGET ? "over" : "")}
-      <p class="rv-note">${rvYen(food)}（うち予定外 <strong>${rvYen(foodUnplanned)}</strong>）／ 残り ${rvYen(Math.max(0, RV_FOOD_BUDGET - food))}</p>
     </details>
   `;
 }
